@@ -43,3 +43,21 @@ export const Table = ({ head, children, empty = "Nothing here yet." }) => (
     </table>
   </div>
 );
+
+export const Modal = ({ title, onClose, children }) => (
+  <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 sm:items-center" onClick={onClose}>
+    <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-slate-700 bg-slate-900 p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-white">{title}</h3>
+        <button className="text-slate-400" aria-label="Close" onClick={onClose}>✕</button>
+      </div>
+      {children}
+    </div>
+  </div>
+);
+
+export const Row = ({ label, children }) => (
+  <div className="flex justify-between gap-4 border-b border-slate-800 py-2 text-sm">
+    <span className="text-slate-400">{label}</span><span className="text-right text-slate-100">{children ?? "—"}</span>
+  </div>
+);

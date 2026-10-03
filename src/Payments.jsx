@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { kes, PageHead, Table, inputCls } from "./ui.jsx";
+import { kes, PageHead, Table, Modal, Row, inputCls } from "./ui.jsx";
 
 export default function Payments({ supabase, propertyId }) {
   const [rows, setRows] = useState([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
+  const [sel, setSel] = useState(null);
+  const [alloc, setAlloc] = useState([]);
 
   useEffect(() => {
     if (!propertyId) return;
@@ -13,6 +15,17 @@ export default function Payments({ supabase, propertyId }) {
       .eq("property_id", propertyId).order("paid_at", { ascending: false }).limit(200)
       .then(({ data }) => setRows(data ?? []));
   }, [propertyId]);
+
+  useEffect(() => {
+    if (!sel) return setAlloc([]);
+    (async () => {
+      const { data: al } = await supabase.from("payment_allocations").select("amount, invoice_id").eq("payment_id", sel.id);
+      const ids = (al ?? []).map((a) => a.invoice_id);
+      const { data: inv } = ids.length ? await supabase.from("invoices").select("id, period").in("id", ids) : { data: [] };
+      const per = Object.fromEntries((inv ?? []).map((i) => [i.id, i.period]));
+      setAlloc((al ?? []).map((a) => ({ ...a, period: per[a.invoice_id] })));
+    })();
+  }, [sel]);
 
   const statuses = [...new Set(rows.map((r) => r.match_status))];
   const shown = rows.filter((r) =>
@@ -31,7 +44,7 @@ export default function Payments({ supabase, propertyId }) {
       </div>
       <Table head={["Code", "Payer", "Reference", "Amount", "Date", "Match"]} empty="No payments received yet.">
         {shown.map((p) => (
-          <tr key={p.id}>
+          <tr key={p.id} className="cursor-pointer hover:bg-slate-800/50" onClick={() => setSel(p)}>
             <td className="px-4 py-3 font-medium text-white">{p.trans_id}</td>
             <td className="px-4 py-3">{p.payer_name ?? "—"}</td>
             <td className="px-4 py-3 text-slate-400">{p.account_key ?? "—"}</td>
@@ -41,6 +54,21 @@ export default function Payments({ supabase, propertyId }) {
           </tr>
         ))}
       </Table>
+      {sel && (
+        <Modal title={`Payment ${sel.trans_id}`} onClose={() => setSel(null)}>
+          <Row label="Amount">{kes(sel.amount)}</Row>
+          <Row label="Payer">{sel.payer_name}</Row>
+          <Row label="Phone">{sel.msisdn}</Row>
+          <Row label="Account reference">{sel.account_key}</Row>
+          <Row label="Received">{new Date(sel.paid_at).toLocaleString("en-KE")}</Row>
+          <Row label="Match status">{sel.match_status}</Row>
+          <h4 className="mb-1 mt-4 text-sm font-medium text-white">Applied to</h4>
+          {alloc.length === 0 && <p className="text-sm text-slate-500">Not applied to any invoice.</p>}
+          {alloc.map((a, k) => (
+            <Row key={k} label={a.period ? new Date(a.period).toLocaleDateString("en-KE", { month: "long", year: "numeric" }) + " invoice" : "Invoice"}>{kes(a.amount)}</Row>
+          ))}
+        </Modal>
+      )}
     </div>
   );
 }

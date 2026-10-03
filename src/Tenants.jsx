@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { kes, Badge, PageHead, Table, inputCls } from "./ui.jsx";
+import { kes, Badge, PageHead, Table, Modal, Row, inputCls } from "./ui.jsx";
 
 export default function Tenants({ supabase, units, onSelect }) {
   const [phones, setPhones] = useState({});
   const [q, setQ] = useState("");
+  const [sel, setSel] = useState(null);
+  const [invs, setInvs] = useState([]);
   const occupied = units.filter((u) => u.state !== "vacant");
 
   useEffect(() => {
@@ -12,6 +14,12 @@ export default function Tenants({ supabase, units, onSelect }) {
       .eq("is_active", true).in("unit_id", occupied.map((u) => u.unit_id))
       .then(({ data }) => setPhones(Object.fromEntries((data ?? []).map((t) => [t.unit_id, t]))));
   }, [units]);
+
+  useEffect(() => {
+    if (!sel) return setInvs([]);
+    supabase.from("invoice_balances").select("invoice_id, period, total, paid, balance")
+      .eq("unit_id", sel.unit_id).order("period", { ascending: false }).limit(6).then(({ data }) => setInvs(data ?? []));
+  }, [sel]);
 
   const rows = occupied.filter((u) =>
     `${u.tenant_name ?? ""} ${u.unit_number} ${u.account_ref}`.toLowerCase().includes(q.toLowerCase()));
@@ -29,10 +37,25 @@ export default function Tenants({ supabase, units, onSelect }) {
             <td className="px-4 py-3 text-slate-400">{phones[u.unit_id]?.move_in ?? "—"}</td>
             <td className="px-4 py-3"><Badge state={u.state} /></td>
             <td className="px-4 py-3">{kes(u.balance)}</td>
-            <td className="px-4 py-3"><button className="text-emerald-300" onClick={() => onSelect(u)}>View</button></td>
+            <td className="px-4 py-3"><button className="text-emerald-300" onClick={() => setSel(u)}>View</button></td>
           </tr>
         ))}
       </Table>
+      {sel && (
+        <Modal title={sel.tenant_name} onClose={() => setSel(null)}>
+          <Row label="Phone">{phones[sel.unit_id]?.phone}</Row>
+          <Row label="Moved in">{phones[sel.unit_id]?.move_in}</Row>
+          <Row label="Unit">{sel.unit_number}</Row>
+          <Row label="Account reference">{sel.account_ref}</Row>
+          <Row label="Status"><Badge state={sel.state} /></Row>
+          <Row label="Balance">{kes(sel.balance)}</Row>
+          <h4 className="mb-1 mt-4 text-sm font-medium text-white">Recent invoices</h4>
+          {invs.length === 0 && <p className="text-sm text-slate-500">No invoices yet.</p>}
+          {invs.map((i) => (
+            <Row key={i.invoice_id} label={new Date(i.period).toLocaleDateString("en-KE", { month: "short", year: "numeric" })}>{kes(i.paid)} of {kes(i.total)}</Row>
+          ))}
+        </Modal>
+      )}
     </div>
   );
 }
