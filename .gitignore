@@ -27,3 +27,4 @@ dist-ssr
 .env.*
 *.bak
 *.before-port
+.vercel
