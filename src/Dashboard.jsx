@@ -13,6 +13,7 @@ import Maintenance from "./Maintenance.jsx";
 import Security from "./Security.jsx";
 import Reports from "./Reports.jsx";
 import Settings from "./Settings.jsx";
+import Properties from "./Properties.jsx";
 import { kes, STATES, PageHead } from "./ui.jsx";
 
 const supabase = createClient(
@@ -20,32 +21,94 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY,
 );
 
+const FEATURES = [
+  ["◆", "M-Pesa Reconciliation", "Automatically match incoming payments to the correct tenant and invoice."],
+  ["▤", "Automated Billing", "Generate monthly invoices and send payment reminders automatically."],
+  ["♙", "Tenant Management", "Keep tenant, unit and payment information organized in one place."],
+  ["🔧", "Maintenance", "Track property issues from reporting through resolution."],
+];
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [show, setShow] = useState(false);
   const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const signIn = async () => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const signIn = async (e) => {
+    e?.preventDefault();
+    if (!email.trim() || !password) return setErr("Please enter your email and password.");
+    setBusy(true); setErr("");
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     if (error) setErr(error.message);
+    setBusy(false);
   };
 
+  const logo = (size) => (
+    <div className={`grid place-items-center rounded-xl bg-blue-600 font-extrabold text-white ${size}`}>V</div>
+  );
+  const inputCls = "h-[46px] w-full rounded-lg border border-gray-200 bg-white px-10 text-[13px] text-gray-900 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10";
+
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-3">
-        <div className="flex items-center gap-3 pb-2">
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-600 font-bold text-white">V</div>
-          <div><h1 className="text-xl font-semibold text-white">VESTA OS</h1><p className="text-[10px] tracking-widest text-slate-500">PROPERTY MANAGEMENT</p></div>
+    <div className="grid min-h-screen bg-slate-50 md:grid-cols-2">
+      <section className="relative hidden flex-col justify-between overflow-hidden bg-gray-900 p-14 text-white md:flex">
+        <div className="pointer-events-none absolute -right-44 top-24 h-[450px] w-[450px] rounded-full border border-white/10" />
+        <div className="pointer-events-none absolute -right-80 top-0 h-[650px] w-[650px] rounded-full border border-white/5" />
+        <div className="relative flex items-center gap-3">
+          {logo("h-[45px] w-[45px] text-xl")}
+          <div><div className="text-xl font-extrabold tracking-wide">VESTA OS</div><div className="text-[9px] tracking-[0.15em] text-gray-400">PROPERTY MANAGEMENT</div></div>
         </div>
-        <input className="w-full rounded-lg bg-slate-900 border border-slate-700 p-3 text-slate-100"
-          placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input type="password" className="w-full rounded-lg bg-slate-900 border border-slate-700 p-3 text-slate-100"
-          placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        {err && <p className="text-sm text-red-400">{err}</p>}
-        <button onClick={signIn} className="w-full rounded-lg bg-emerald-600 hover:bg-emerald-500 p-3 font-medium text-white">
-          Sign in
-        </button>
-      </div>
+        <div className="relative max-w-[520px]">
+          <h1 className="text-5xl font-extrabold leading-[1.05] tracking-tight">Manage your properties. <span className="text-blue-400">Simply.</span></h1>
+          <p className="mt-5 max-w-[470px] text-base leading-7 text-gray-400">VESTA OS brings property management, tenant billing, M-Pesa payments, maintenance and communication into one connected platform.</p>
+          <div className="mt-9 grid grid-cols-2 gap-4">
+            {FEATURES.map(([icon, title, text]) => (
+              <div key={title} className="rounded-[10px] border border-gray-700 bg-white/[0.03] p-4">
+                <div className="mb-2.5 text-[19px]">{icon}</div>
+                <div className="mb-1 text-xs font-bold">{title}</div>
+                <div className="text-[10px] leading-relaxed text-gray-400">{text}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="relative text-[11px] text-gray-500">© 2026 VESTA OS. Property management platform.</div>
+      </section>
+
+      <section className="flex items-center justify-center bg-white p-6 md:p-9">
+        <div className="w-full max-w-[420px]">
+          <div className="mb-11 flex items-center justify-center gap-2.5 md:hidden">
+            {logo("h-10 w-10 text-lg")}<strong className="text-lg text-gray-900">VESTA OS</strong>
+          </div>
+          <div className="mb-8">
+            <h2 className="mb-2 text-[30px] font-bold text-gray-900">Welcome back</h2>
+            <p className="text-[13px] leading-relaxed text-gray-500">Sign in to access your property management dashboard.</p>
+          </div>
+          {err && <div className="mb-5 rounded-[7px] border border-red-200 bg-red-50 px-3 py-2.5 text-[11px] text-red-600">{err}</div>}
+          <form onSubmit={signIn}>
+            <div className="mb-5">
+              <label className="mb-2 block text-xs font-bold text-gray-900" htmlFor="email">EMAIL ADDRESS</label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-3 text-[15px] text-gray-500">@</span>
+                <input id="email" type="email" autoComplete="email" className={inputCls} placeholder="you@example.com"
+                  value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+            </div>
+            <div className="mb-6">
+              <label className="mb-2 block text-xs font-bold text-gray-900" htmlFor="password">PASSWORD</label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-3 text-[15px] text-gray-500">*</span>
+                <input id="password" type={show ? "text" : "password"} autoComplete="current-password" className={inputCls}
+                  placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-3 text-sm text-gray-500">{show ? "Hide" : "Show"}</button>
+              </div>
+            </div>
+            <button type="submit" disabled={busy} className="h-[47px] w-full rounded-lg bg-blue-600 text-[13px] font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70">
+              {busy ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+          <div className="my-6 flex items-center gap-3 text-[10px] text-gray-400 before:h-px before:flex-1 before:bg-gray-200 after:h-px after:flex-1 after:bg-gray-200">SECURE PROPERTY MANAGEMENT</div>
+        </div>
+      </section>
     </div>
   );
 }
@@ -179,6 +242,7 @@ function Dashboard() {
           </div>
         </>
       )}
+      {tab === "properties" && <Properties supabase={supabase} properties={properties} onOpen={(id) => { setPropertyId(id); setTab("grid"); }} />}
       {tab === "units" && <Units units={units} onSelect={setSelected} />}
       {tab === "tenants" && <Tenants supabase={supabase} units={units} onSelect={setSelected} />}
       {tab === "invoices" && <Invoices supabase={supabase} units={units} />}
