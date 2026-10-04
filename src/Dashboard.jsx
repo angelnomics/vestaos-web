@@ -14,6 +14,7 @@ import Security from "./Security.jsx";
 import Reports from "./Reports.jsx";
 import Settings from "./Settings.jsx";
 import Properties from "./Properties.jsx";
+import { AddProperty, AddUnit, AddTenant } from "./Actions.jsx";
 import { kes, STATES, PageHead } from "./ui.jsx";
 
 const supabase = createClient(
@@ -199,19 +200,23 @@ function Dashboard() {
   const [units, setUnits] = useState([]);
   const [tab, setTab] = useState("grid");
   const [selected, setSelected] = useState(null);
+  const [tick, setTick] = useState(0);
+  const refresh = () => setTick((t) => t + 1);
+  const [fab, setFab] = useState(false);
+  const [addKind, setAddKind] = useState(null);
 
   useEffect(() => {
     supabase.from("properties").select("id, name").order("name").then(({ data }) => {
       setProperties(data ?? []);
-      if (data?.length) setPropertyId(data[0].id);
+      setPropertyId((cur) => (data?.some((p) => p.id === cur) ? cur : data?.[0]?.id ?? null));
     });
-  }, []);
+  }, [tick]);
 
   useEffect(() => {
-    if (!propertyId) return;
+    if (!propertyId) return setUnits([]);
     supabase.from("unit_dashboard").select("*").eq("property_id", propertyId)
       .order("unit_number").then(({ data }) => setUnits(data ?? []));
-  }, [propertyId]);
+  }, [propertyId, tick]);
 
   const summary = useMemo(() => ({
     paid: units.filter((u) => u.state === "paid").length,
@@ -242,9 +247,9 @@ function Dashboard() {
           </div>
         </>
       )}
-      {tab === "properties" && <Properties supabase={supabase} properties={properties} onOpen={(id) => { setPropertyId(id); setTab("grid"); }} />}
-      {tab === "units" && <Units units={units} onSelect={setSelected} />}
-      {tab === "tenants" && <Tenants supabase={supabase} units={units} onSelect={setSelected} />}
+      {tab === "properties" && <Properties supabase={supabase} properties={properties} onChanged={refresh} onOpen={(id) => { setPropertyId(id); setTab("grid"); }} />}
+      {tab === "units" && <Units supabase={supabase} propertyId={propertyId} units={units} onSelect={setSelected} onChanged={refresh} />}
+      {tab === "tenants" && <Tenants supabase={supabase} units={units} onChanged={refresh} />}
       {tab === "invoices" && <Invoices supabase={supabase} units={units} />}
       {tab === "payments" && <Payments supabase={supabase} propertyId={propertyId} />}
       {tab === "unmatched" && (<><PageHead title="Unmatched payments" hint="Assign these to a unit." /><Unmatched propertyId={propertyId} units={units} /></>)}
@@ -255,6 +260,15 @@ function Dashboard() {
       {tab === "settings" && <Settings supabase={supabase} propertyId={propertyId} />}
       {tab === "readings" && <Readings supabase={supabase} units={units} />}
       {tab === "manage" && <Manage supabase={supabase} propertyId={propertyId} properties={properties} units={units} />}
+      <div className="fixed bottom-5 right-5 z-20 flex flex-col items-end gap-2">
+        {fab && [["property", "Add property"], ["unit", "Add unit"], ["tenant", "Add tenant"]].map(([k, label]) => (
+          <button key={k} className="rounded-full bg-slate-800 px-4 py-2 text-sm text-white shadow-lg" onClick={() => { setAddKind(k); setFab(false); }}>{label}</button>
+        ))}
+        <button aria-label="Quick add" className="grid h-14 w-14 place-items-center rounded-full bg-emerald-600 text-3xl text-white shadow-lg" onClick={() => setFab(!fab)}>{fab ? "×" : "+"}</button>
+      </div>
+      {addKind === "property" && <AddProperty supabase={supabase} onClose={() => setAddKind(null)} onDone={refresh} />}
+      {addKind === "unit" && <AddUnit supabase={supabase} propertyId={propertyId} onClose={() => setAddKind(null)} onDone={refresh} />}
+      {addKind === "tenant" && <AddTenant supabase={supabase} units={units} onClose={() => setAddKind(null)} onDone={refresh} />}
       {selected && <UnitDrawer unit={selected} onClose={() => setSelected(null)} />}
     </Layout>
   );

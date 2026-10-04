@@ -1,4 +1,5 @@
 import { useState } from "react";
+import InstallButton from "./Install.jsx";
 import { LayoutGrid, Users, CreditCard, FileText, Inbox, Droplets, Settings, Menu, LogOut, Building2, Wrench, ShieldCheck, Mail, TrendingUp, Landmark } from "lucide-react";
 
 const NAV = [
@@ -33,6 +34,7 @@ export default function Layout({ page, setPage, properties, propertyId, setPrope
           </div>
         ))}
       </nav>
+      <InstallButton />
       <button onClick={() => go("settings")}
         className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${page === "settings" ? "bg-emerald-600 text-white" : "text-slate-300 hover:bg-slate-800"}`}>
         <Settings size={16} /> Settings
