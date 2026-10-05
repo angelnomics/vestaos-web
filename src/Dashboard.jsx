@@ -22,6 +22,9 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY,
 );
 
+// Shown under the login form when filled in.
+const SUPPORT = { email: "nicholink254@gmail.com", phone: "0795629436" };
+
 const FEATURES = [
   ["◆", "M-Pesa Reconciliation", "Automatically match incoming payments to the correct tenant and invoice."],
   ["▤", "Automated Billing", "Generate monthly invoices and send payment reminders automatically."],
@@ -35,6 +38,15 @@ function Login() {
   const [show, setShow] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [info, setInfo] = useState("");
+
+  const forgot = async () => {
+    if (!email.trim()) return setErr("Enter your email address first.");
+    setErr(""); setInfo("");
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: window.location.origin });
+    if (error) return setErr(error.message);
+    setInfo("If that email has an account, a password reset link is on its way.");
+  };
 
   const signIn = async (e) => {
     e?.preventDefault();
@@ -85,6 +97,7 @@ function Login() {
             <p className="text-[13px] leading-relaxed text-gray-500">Sign in to access your property management dashboard.</p>
           </div>
           {err && <div className="mb-5 rounded-[7px] border border-red-200 bg-red-50 px-3 py-2.5 text-[11px] text-red-600">{err}</div>}
+          {info && <div className="mb-5 rounded-[7px] border border-green-200 bg-green-50 px-3 py-2.5 text-[11px] text-green-700">{info}</div>}
           <form onSubmit={signIn}>
             <div className="mb-5">
               <label className="mb-2 block text-xs font-bold text-gray-900" htmlFor="email">EMAIL ADDRESS</label>
@@ -102,12 +115,21 @@ function Login() {
                   placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
                 <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-3 text-sm text-gray-500">{show ? "Hide" : "Show"}</button>
               </div>
+              <div className="mt-2 text-right"><button type="button" onClick={forgot} className="text-[11px] font-semibold text-blue-600 hover:underline">Forgot password?</button></div>
             </div>
             <button type="submit" disabled={busy} className="h-[47px] w-full rounded-lg bg-blue-600 text-[13px] font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70">
               {busy ? "Signing in..." : "Sign In"}
             </button>
           </form>
           <div className="my-6 flex items-center gap-3 text-[10px] text-gray-400 before:h-px before:flex-1 before:bg-gray-200 after:h-px after:flex-1 after:bg-gray-200">SECURE PROPERTY MANAGEMENT</div>
+          {(SUPPORT.email || SUPPORT.phone) && (
+            <div className="text-center text-[11px] leading-relaxed text-gray-500">
+              Need help accessing your account?<br />
+              {SUPPORT.email && <a className="font-semibold text-blue-600" href={`mailto:${SUPPORT.email}`}>{SUPPORT.email}</a>}
+              {SUPPORT.email && SUPPORT.phone && " · "}
+              {SUPPORT.phone && <a className="font-semibold text-blue-600" href={`tel:${SUPPORT.phone}`}>{SUPPORT.phone}</a>}
+            </div>
+          )}
         </div>
       </section>
     </div>
@@ -274,15 +296,53 @@ function Dashboard() {
   );
 }
 
+function SetPassword({ onDone }) {
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const save = async (e) => {
+    e.preventDefault();
+    if (pw.length < 8) return setErr("Use at least 8 characters.");
+    if (pw !== pw2) return setErr("The two passwords do not match.");
+    setBusy(true); setErr("");
+    const { error } = await supabase.auth.updateUser({ password: pw });
+    setBusy(false);
+    if (error) return setErr(error.message);
+    window.history.replaceState(null, "", window.location.pathname);
+    onDone();
+  };
+
+  const field = "h-[46px] w-full rounded-lg border border-gray-200 bg-white px-3 text-[13px] text-gray-900 outline-none focus:border-blue-600";
+  return (
+    <div className="grid min-h-screen place-items-center bg-white p-6">
+      <form onSubmit={save} className="w-full max-w-[420px] space-y-4">
+        <h2 className="text-[26px] font-bold text-gray-900">Choose a new password</h2>
+        <p className="text-[13px] text-gray-500">Enter a new password for your account.</p>
+        {err && <div className="rounded-[7px] border border-red-200 bg-red-50 px-3 py-2.5 text-[11px] text-red-600">{err}</div>}
+        <input type="password" autoComplete="new-password" className={field} placeholder="New password" value={pw} onChange={(e) => setPw(e.target.value)} />
+        <input type="password" autoComplete="new-password" className={field} placeholder="Repeat new password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
+        <button type="submit" disabled={busy} className="h-[47px] w-full rounded-lg bg-blue-600 text-[13px] font-bold text-white hover:bg-blue-700 disabled:opacity-70">{busy ? "Saving..." : "Save password"}</button>
+      </form>
+    </div>
+  );
+}
+
 export default function App() {
   const [session, setSession] = useState(undefined);
+  const [recovery, setRecovery] = useState(() => window.location.hash.includes("type=recovery"));
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    const { data: sub } = supabase.auth.onAuthStateChange((e, s) => {
+      if (e === "PASSWORD_RECOVERY") setRecovery(true);
+      setSession(s);
+    });
     return () => sub.subscription.unsubscribe();
   }, []);
 
   if (session === undefined) return null;
+  if (recovery && session) return <SetPassword onDone={() => setRecovery(false)} />;
   return session ? <Dashboard /> : <Login />;
 }
