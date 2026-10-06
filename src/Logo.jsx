@@ -1,0 +1,13 @@
+export default function Logo({ size = 40, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" className={className} role="img" aria-label="SOVA">
+      <rect width="100" height="100" rx="22" fill="#059669" />
+      <path d="M30 33 L42 41 Q50 38.5 58 41 L70 33 Q76 42 76 54 Q76 78 50 78 Q24 78 24 54 Q24 42 30 33 Z" fill="#fff" />
+      <circle cx="39" cy="57" r="8.5" fill="#059669" />
+      <circle cx="61" cy="57" r="8.5" fill="#059669" />
+      <circle cx="39" cy="57" r="3.5" fill="#fff" />
+      <circle cx="61" cy="57" r="3.5" fill="#fff" />
+      <path d="M50 61 L45 68 L55 68 Z" fill="#059669" />
+    </svg>
+  );
+}

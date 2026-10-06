@@ -35,7 +35,7 @@ export default function InstallButton() {
         <Download size={16} /> Install app
       </button>
       {help && (
-        <Modal title="Install Vesta OS" onClose={() => setHelp(false)}>
+        <Modal title="Install Sova" onClose={() => setHelp(false)}>
           {isIos() ? (
             <ol className="list-decimal space-y-2 pl-5 text-sm text-slate-300">
               <li>Open this site in <b>Safari</b>.</li>
@@ -46,7 +46,7 @@ export default function InstallButton() {
             <ol className="list-decimal space-y-2 pl-5 text-sm text-slate-300">
               <li>Open the browser menu (the three dots).</li>
               <li>Choose <b>Install app</b> or <b>Add to Home screen</b>.</li>
-              <li>Confirm, and Vesta OS appears with your other apps.</li>
+              <li>Confirm, and Sova appears with your other apps.</li>
             </ol>
           )}
         </Modal>

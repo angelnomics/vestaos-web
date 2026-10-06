@@ -1,5 +1,6 @@
 import { useState } from "react";
 import InstallButton from "./Install.jsx";
+import Logo from "./Logo.jsx";
 import { LayoutGrid, Users, CreditCard, FileText, Inbox, Droplets, Settings, Menu, LogOut, Building2, Wrench, ShieldCheck, Mail, TrendingUp, Landmark } from "lucide-react";
 
 const NAV = [
@@ -15,9 +16,9 @@ export default function Layout({ page, setPage, properties, propertyId, setPrope
   const sidebar = (
     <aside className="flex h-full w-60 flex-col bg-slate-900 border-r border-slate-800 p-4">
       <div className="flex items-center gap-3 px-2 pb-6">
-        <div className="grid h-9 w-9 place-items-center rounded-lg bg-emerald-600 font-bold text-white">V</div>
+        <Logo size={36} />
         <div>
-          <div className="font-semibold text-white">VESTA OS</div>
+          <div className="font-semibold tracking-wide text-white">SOVA</div>
           <div className="text-[10px] tracking-widest text-slate-500">PROPERTY MANAGEMENT</div>
         </div>
       </div>

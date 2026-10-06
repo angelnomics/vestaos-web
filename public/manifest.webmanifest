@@ -1,6 +1,6 @@
 {
-  "name": "Vesta OS",
-  "short_name": "Vesta OS",
+  "name": "Sova",
+  "short_name": "Sova",
   "description": "Property management: rent, M-Pesa payments, tenants and SMS.",
   "start_url": "/",
   "scope": "/",

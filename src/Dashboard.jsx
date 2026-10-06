@@ -14,6 +14,7 @@ import Security from "./Security.jsx";
 import Reports from "./Reports.jsx";
 import Settings from "./Settings.jsx";
 import Properties from "./Properties.jsx";
+import Logo from "./Logo.jsx";
 import { AddProperty, AddUnit, AddTenant } from "./Actions.jsx";
 import { kes, STATES, PageHead } from "./ui.jsx";
 
@@ -57,9 +58,7 @@ function Login() {
     setBusy(false);
   };
 
-  const logo = (size) => (
-    <div className={`grid place-items-center rounded-xl bg-blue-600 font-extrabold text-white ${size}`}>V</div>
-  );
+  const logo = (px) => <Logo size={px} />;
   const inputCls = "h-[46px] w-full rounded-lg border border-gray-200 bg-white px-10 text-[13px] text-gray-900 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10";
 
   return (
@@ -68,12 +67,12 @@ function Login() {
         <div className="pointer-events-none absolute -right-44 top-24 h-[450px] w-[450px] rounded-full border border-white/10" />
         <div className="pointer-events-none absolute -right-80 top-0 h-[650px] w-[650px] rounded-full border border-white/5" />
         <div className="relative flex items-center gap-3">
-          {logo("h-[45px] w-[45px] text-xl")}
-          <div><div className="text-xl font-extrabold tracking-wide">VESTA OS</div><div className="text-[9px] tracking-[0.15em] text-gray-400">PROPERTY MANAGEMENT</div></div>
+          {logo(45)}
+          <div><div className="text-xl font-extrabold tracking-wide">SOVA</div><div className="text-[9px] tracking-[0.15em] text-gray-400">PROPERTY MANAGEMENT</div></div>
         </div>
         <div className="relative max-w-[520px]">
           <h1 className="text-5xl font-extrabold leading-[1.05] tracking-tight">Manage your properties. <span className="text-blue-400">Simply.</span></h1>
-          <p className="mt-5 max-w-[470px] text-base leading-7 text-gray-400">VESTA OS brings property management, tenant billing, M-Pesa payments, maintenance and communication into one connected platform.</p>
+          <p className="mt-5 max-w-[470px] text-base leading-7 text-gray-400">SOVA brings property management, tenant billing, M-Pesa payments, maintenance and communication into one connected platform.</p>
           <div className="mt-9 grid grid-cols-2 gap-4">
             {FEATURES.map(([icon, title, text]) => (
               <div key={title} className="rounded-[10px] border border-gray-700 bg-white/[0.03] p-4">
@@ -84,13 +83,13 @@ function Login() {
             ))}
           </div>
         </div>
-        <div className="relative text-[11px] text-gray-500">© 2026 VESTA OS. Property management platform.</div>
+        <div className="relative text-[11px] text-gray-500">© 2026 SOVA. Property management platform.</div>
       </section>
 
       <section className="flex items-center justify-center bg-white p-6 md:p-9">
         <div className="w-full max-w-[420px]">
           <div className="mb-11 flex items-center justify-center gap-2.5 md:hidden">
-            {logo("h-10 w-10 text-lg")}<strong className="text-lg text-gray-900">VESTA OS</strong>
+            {logo(40)}<strong className="text-lg tracking-wide text-gray-900">SOVA</strong>
           </div>
           <div className="mb-8">
             <h2 className="mb-2 text-[30px] font-bold text-gray-900">Welcome back</h2>
