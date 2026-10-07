@@ -272,7 +272,7 @@ function Dashboard() {
       {tab === "units" && <Units supabase={supabase} propertyId={propertyId} units={units} onSelect={setSelected} onChanged={refresh} />}
       {tab === "tenants" && <Tenants supabase={supabase} units={units} onChanged={refresh} />}
       {tab === "invoices" && <Invoices supabase={supabase} units={units} />}
-      {tab === "payments" && <Payments supabase={supabase} propertyId={propertyId} />}
+      {tab === "payments" && <Payments supabase={supabase} propertyId={propertyId} units={units} onChanged={refresh} />}
       {tab === "unmatched" && (<><PageHead title="Unmatched payments" hint="Assign these to a unit." /><Unmatched propertyId={propertyId} units={units} /></>)}
       {tab === "reports" && <Reports supabase={supabase} units={units} />}
       {tab === "maintenance" && <Maintenance supabase={supabase} propertyId={propertyId} units={units} />}
