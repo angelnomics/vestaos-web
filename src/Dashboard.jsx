@@ -14,6 +14,7 @@ import Security from "./Security.jsx";
 import Reports from "./Reports.jsx";
 import Settings from "./Settings.jsx";
 import Properties from "./Properties.jsx";
+import Health from "./Health.jsx";
 import Logo from "./Logo.jsx";
 import { AddProperty, AddUnit, AddTenant } from "./Actions.jsx";
 import { kes, STATES, PageHead } from "./ui.jsx";
@@ -250,6 +251,7 @@ function Dashboard() {
       setPropertyId={setPropertyId} onSignOut={() => supabase.auth.signOut()}>
       {tab === "grid" && (
         <>
+          <Health supabase={supabase} tick={tick} onGo={setTab} />
           <PageHead title="Dashboard" hint="Rent status for every unit this month." />
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="rounded-xl bg-slate-900 p-3"><div className="text-xl font-semibold text-emerald-300">{summary.paid}</div><div className="text-xs text-slate-400">Paid</div></div>
