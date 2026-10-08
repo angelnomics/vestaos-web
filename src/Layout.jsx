@@ -1,11 +1,11 @@
 import { useState } from "react";
 import InstallButton from "./Install.jsx";
 import Logo from "./Logo.jsx";
-import { LayoutGrid, Users, CreditCard, FileText, Inbox, Droplets, Settings, Menu, LogOut, Building2, Wrench, ShieldCheck, Mail, TrendingUp, Landmark } from "lucide-react";
+import { LayoutGrid, Users, CreditCard, FileText, Inbox, Droplets, Settings, Menu, LogOut, Building2, Wrench, ShieldCheck, Mail, TrendingUp, Landmark, Wallet } from "lucide-react";
 
 const NAV = [
   ["Main", [["grid", "Dashboard", LayoutGrid], ["properties", "Properties", Landmark], ["units", "Units", Building2], ["tenants", "Tenants", Users]]],
-  ["Finance", [["invoices", "Invoices", FileText], ["payments", "M-Pesa Payments", CreditCard], ["unmatched", "Unmatched", Inbox], ["reports", "Reports", TrendingUp]]],
+  ["Finance", [["invoices", "Invoices", FileText], ["payments", "M-Pesa Payments", CreditCard], ["unmatched", "Unmatched", Inbox], ["deposits", "Deposits", Wallet], ["reports", "Reports", TrendingUp]]],
   ["Operations", [["readings", "Readings", Droplets], ["maintenance", "Maintenance", Wrench], ["security", "Security Log", ShieldCheck], ["sms", "SMS Outbox", Mail], ["manage", "Manage", Settings]]],
 ];
 

@@ -13,7 +13,7 @@ export default function Tenants({ supabase, units, onChanged }) {
 
   useEffect(() => {
     if (occupied.length === 0) return setInfo({});
-    supabase.from("tenants").select("id, unit_id, phone, move_in")
+    supabase.from("tenants").select("id, unit_id, phone, move_in, deposit_amount, deposit_received_on, deposit_refunded_on")
       .eq("is_active", true).in("unit_id", occupied.map((u) => u.unit_id))
       .then(({ data }) => setInfo(Object.fromEntries((data ?? []).map((t) => [t.unit_id, t]))));
   }, [units]);
@@ -74,6 +74,7 @@ export default function Tenants({ supabase, units, onChanged }) {
           <Row label="Account reference">{sel.account_ref}</Row>
           <Row label="Status"><Badge state={sel.state} /></Row>
           <Row label="Balance">{kes(sel.balance)}</Row>
+          <Row label="Deposit">{Number(info[sel.unit_id]?.deposit_amount) > 0 ? `${kes(info[sel.unit_id].deposit_amount)} · ${info[sel.unit_id].deposit_received_on ? "held" : "not received yet"}` : "None"}</Row>
           <h4 className="mb-1 mt-4 text-sm font-medium text-white">Recent invoices</h4>
           {invs.length === 0 && <p className="text-sm text-slate-500">No invoices yet.</p>}
           {invs.map((i) => (

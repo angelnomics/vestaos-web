@@ -69,17 +69,24 @@ export function AddUnit({ supabase, propertyId, onClose, onDone }) {
 
 export function AddTenant({ supabase, units, onClose, onDone }) {
   const vacant = units.filter((u) => u.state === "vacant");
-  const [f, setF] = useState({ unitId: "", name: "", phone: "" });
+  const [f, setF] = useState({ unitId: "", name: "", phone: "", deposit: "", received: new Date().toISOString().slice(0, 10) });
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   return (
     <Form title="Add a tenant" onClose={onClose} onDone={onDone} canSave={f.unitId && f.name.trim() && f.phone.trim()}
-      save={async () => (await supabase.from("tenants").insert({ unit_id: f.unitId, full_name: f.name.trim(), phone: f.phone.trim() })).error}>
+      save={async () => (await supabase.from("tenants").insert({
+        unit_id: f.unitId, full_name: f.name.trim(), phone: f.phone.trim(),
+        ...(Number(f.deposit) > 0 ? { deposit_amount: Number(f.deposit), deposit_received_on: f.received || null } : {}),
+      })).error}>
       <select className={`${inputCls} w-full`} value={f.unitId} onChange={set("unitId")}>
         <option value="">{vacant.length ? "Choose a vacant unit…" : "No vacant units. Add a unit first."}</option>
         {vacant.map((u) => <option key={u.unit_id} value={u.unit_id}>{u.account_ref}</option>)}
       </select>
       <input className={`${inputCls} w-full`} placeholder="Full name" value={f.name} onChange={set("name")} />
       <input className={`${inputCls} w-full`} placeholder="Phone (e.g. 0712345678)" value={f.phone} onChange={set("phone")} />
+      <input className={`${inputCls} w-full`} type="number" placeholder="Deposit received (KES, optional)" value={f.deposit} onChange={set("deposit")} />
+      {Number(f.deposit) > 0 && (
+        <label className="block text-xs text-slate-400">Deposit received on<input className={`${inputCls} mt-1 w-full`} type="date" value={f.received} onChange={set("received")} /></label>
+      )}
       <p className="text-xs text-slate-400">Rent is billed from the next 1st of the month.</p>
     </Form>
   );

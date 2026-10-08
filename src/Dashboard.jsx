@@ -15,6 +15,7 @@ import Reports from "./Reports.jsx";
 import Settings from "./Settings.jsx";
 import Properties from "./Properties.jsx";
 import Health from "./Health.jsx";
+import Deposits from "./Deposits.jsx";
 import Logo from "./Logo.jsx";
 import { AddProperty, AddUnit, AddTenant } from "./Actions.jsx";
 import { kes, STATES, PageHead } from "./ui.jsx";
@@ -279,6 +280,7 @@ function Dashboard() {
       {tab === "invoices" && <Invoices supabase={supabase} units={units} />}
       {tab === "payments" && <Payments supabase={supabase} propertyId={propertyId} units={units} onChanged={refresh} />}
       {tab === "unmatched" && (<><PageHead title="Unmatched payments" hint="Assign these to a unit." /><Unmatched propertyId={propertyId} units={units} /></>)}
+      {tab === "deposits" && <Deposits supabase={supabase} units={units} onChanged={refresh} />}
       {tab === "reports" && <Reports supabase={supabase} units={units} />}
       {tab === "maintenance" && <Maintenance supabase={supabase} propertyId={propertyId} units={units} />}
       {tab === "security" && <Security supabase={supabase} propertyId={propertyId} />}
