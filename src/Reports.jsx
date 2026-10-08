@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { kes, PageHead, Table } from "./ui.jsx";
+import { downloadCsv, btnGhost } from "./export.js";
 
 export default function Reports({ supabase, units }) {
   const [inv, setInv] = useState([]);
@@ -18,7 +19,11 @@ export default function Reports({ supabase, units }) {
 
   return (
     <div className="space-y-4">
-      <PageHead title="Reports" hint="Billing and collection summary for this property." />
+      <PageHead title="Reports" hint="Billing and collection summary for this property.">
+        <button className={btnGhost} disabled={list.length === 0} onClick={() => downloadCsv("sova-report.csv",
+          ["Month", "Invoices", "Billed", "Collected", "Outstanding"],
+          list.map(([p, rows]) => [p.slice(0, 7), rows.length, sum(rows, "total"), sum(rows, "paid"), sum(rows, "balance")]))}>Download CSV</button>
+      </PageHead>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 text-center">
         {[["Billed", kes(billed)], ["Collected", kes(paid)], ["Outstanding", kes(sum(inv, "balance"))], ["Collection rate", billed ? Math.round((paid / billed) * 100) + "%" : "—"]].map(([l, v]) => (
           <div key={l} className="rounded-xl bg-slate-900 p-3"><div className="font-semibold text-white">{v}</div><div className="text-xs text-slate-400">{l}</div></div>

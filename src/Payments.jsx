@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { kes, PageHead, Table, Modal, Row, inputCls } from "./ui.jsx";
 import { btnPrimary } from "./Actions.jsx";
+import { downloadCsv, printDoc, esc, money, day, btnGhost } from "./export.js";
 
 export default function Payments({ supabase, propertyId, units = [], onChanged }) {
   const [rows, setRows] = useState([]);
@@ -33,6 +34,23 @@ export default function Payments({ supabase, propertyId, units = [], onChanged }
     })();
   }, [sel]);
 
+  const printReceipt = async () => {
+    const { data: pr } = await supabase.from("properties").select("name").eq("id", propertyId).maybeSingle();
+    const applied = alloc.map((a) => `<tr><td>${esc(a.period ? new Date(a.period).toLocaleDateString("en-KE", { month: "long", year: "numeric" }) + " rent" : "Invoice")}</td><td class="r">${money(a.amount)}</td></tr>`).join("");
+    printDoc(`Receipt ${sel.trans_id}`, `
+      <div class="brand"><b>SOVA</b><span>Payment receipt</span></div>
+      <h1>${esc(pr?.name ?? "")}</h1>
+      <p class="muted">Receipt for M-Pesa payment ${esc(sel.trans_id)}</p>
+      <table>
+        <tr><td>Received from</td><td class="r">${esc(sel.payer_name ?? "")}</td></tr>
+        <tr><td>Account reference</td><td class="r">${esc(sel.account_key ?? "")}</td></tr>
+        <tr><td>Date</td><td class="r">${esc(day(sel.paid_at))}</td></tr>
+        <tr class="total"><td>Amount received</td><td class="r">${money(sel.amount)}</td></tr>
+      </table>
+      ${applied ? `<p class="muted">Applied to</p><table>${applied}</table>` : ""}
+      <div class="box">Thank you for your payment.</div>`);
+  };
+
   const record = async () => {
     setBusy(true); setMsg("");
     const { error } = await supabase.rpc("record_manual_payment", {
@@ -52,7 +70,12 @@ export default function Payments({ supabase, propertyId, units = [], onChanged }
   return (
     <div className="space-y-4">
       <PageHead title="M-Pesa Payments" hint="Latest 200 payments received for this property.">
-        <button className={btnPrimary} disabled={!propertyId} onClick={() => { setMsg(""); setRec(true); }}>+ Record payment</button>
+        <div className="flex gap-2">
+          <button className={btnGhost} disabled={shown.length === 0} onClick={() => downloadCsv("sova-payments.csv",
+            ["M-Pesa code", "Payer", "Phone", "Account reference", "Amount", "Date", "Match status"],
+            shown.map((p) => [p.trans_id, p.payer_name, p.msisdn, p.account_key, Number(p.amount), p.paid_at?.slice(0, 10), p.match_status]))}>Download CSV</button>
+          <button className={btnPrimary} disabled={!propertyId} onClick={() => { setMsg(""); setRec(true); }}>+ Record payment</button>
+        </div>
       </PageHead>
       <div className="flex flex-wrap gap-2">
         <input className={`${inputCls} w-full sm:w-72`} placeholder="Search code, payer or reference…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -86,6 +109,7 @@ export default function Payments({ supabase, propertyId, units = [], onChanged }
           {alloc.map((a, k) => (
             <Row key={k} label={a.period ? new Date(a.period).toLocaleDateString("en-KE", { month: "long", year: "numeric" }) + " invoice" : "Invoice"}>{kes(a.amount)}</Row>
           ))}
+          <button className={`${btnGhost} mt-4`} onClick={printReceipt}>Print receipt / save as PDF</button>
         </Modal>
       )}
       {rec && (

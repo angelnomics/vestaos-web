@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { kes, Badge, PageHead, Table, Modal, Row, inputCls } from "./ui.jsx";
+import { downloadCsv, printDoc, esc, money, day, btnGhost } from "./export.js";
 
 export default function Invoices({ supabase, units }) {
   const [rows, setRows] = useState([]);
@@ -31,9 +32,32 @@ export default function Invoices({ supabase, units }) {
   const state = (i) => (Number(i.balance) <= 0 ? "paid" : i.due_date < today ? "overdue" : "unpaid");
   const shown = rows.filter((i) => (byId[i.unit_id]?.unit_number ?? "").toLowerCase().includes(q.toLowerCase()));
 
+  const printInvoice = async () => {
+    const u = byId[sel.unit_id];
+    const { data: pr } = await supabase.from("properties").select("name, pay_shortcode").eq("id", u.property_id).maybeSingle();
+    const paid = (det?.al ?? []).map((a) => `<tr><td>${esc(det.pay[a.payment_id]?.trans_id ?? "Payment")} (${esc(day(det.pay[a.payment_id]?.paid_at))})</td><td class="r">${money(a.amount)}</td></tr>`).join("");
+    printDoc(`Invoice ${u.unit_number}`, `
+      <div class="brand"><b>SOVA</b><span>Invoice</span></div>
+      <h1>${esc(pr?.name ?? "")}</h1>
+      <p class="muted">Unit ${esc(u.unit_number)} · ${esc(u.tenant_name ?? "")}<br>Period: ${esc(new Date(sel.period).toLocaleDateString("en-KE", { month: "long", year: "numeric" }))} · Due: ${esc(day(sel.due_date))}</p>
+      <table>
+        <tr><th>Description</th><th class="r">Amount</th></tr>
+        <tr><td>Rent</td><td class="r">${det?.inv ? money(det.inv.rent_amount) : ""}</td></tr>
+        <tr><td>Utilities</td><td class="r">${det?.inv ? money(det.inv.utilities_amount) : ""}</td></tr>
+        <tr class="total"><td>Total</td><td class="r">${money(sel.total)}</td></tr>
+      </table>
+      ${paid ? `<p class="muted">Payments received</p><table>${paid}</table>` : ""}
+      <table><tr class="total"><td>Balance due</td><td class="r">${money(sel.balance)}</td></tr></table>
+      <div class="box">Pay via Paybill <b>${esc(pr?.pay_shortcode ?? "-")}</b>, Account Number: <b>${esc(u.account_ref)}</b></div>`);
+  };
+
   return (
     <div className="space-y-4">
-      <PageHead title="Invoices" hint="Monthly invoices with what has been paid." />
+      <PageHead title="Invoices" hint="Monthly invoices with what has been paid.">
+        <button className={btnGhost} disabled={shown.length === 0} onClick={() => downloadCsv("sova-invoices.csv",
+          ["Unit", "Tenant", "Period", "Due date", "Total", "Paid", "Balance", "Status"],
+          shown.map((i) => [byId[i.unit_id]?.unit_number, byId[i.unit_id]?.tenant_name, i.period, i.due_date, Number(i.total), Number(i.paid), Number(i.balance), state(i)]))}>Download CSV</button>
+      </PageHead>
       <input className={`${inputCls} w-full sm:w-72`} placeholder="Search by unit…" value={q} onChange={(e) => setQ(e.target.value)} />
       <Table head={["Unit", "Period", "Due", "Total", "Paid", "Balance", "Status"]} empty="No invoices yet. They are created on the 1st of each month.">
         {shown.map((i) => (
@@ -63,6 +87,7 @@ export default function Invoices({ supabase, units }) {
           {det?.al.map((a, k) => (
             <Row key={k} label={`${det.pay[a.payment_id]?.trans_id ?? "Payment"} · ${det.pay[a.payment_id] ? new Date(det.pay[a.payment_id].paid_at).toLocaleDateString("en-KE") : ""}`}>{kes(a.amount)}</Row>
           ))}
+          <button className={`${btnGhost} mt-4`} onClick={printInvoice}>Print / save as PDF</button>
         </Modal>
       )}
     </div>
