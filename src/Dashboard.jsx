@@ -19,6 +19,9 @@ import Logo from "./Logo.jsx";
 import { AddProperty, AddUnit, AddTenant } from "./Actions.jsx";
 import { kes, STATES, PageHead } from "./ui.jsx";
 
+// Read before the Supabase client clears the link from the address bar.
+const FROM_EMAIL_LINK = /type=(invite|recovery)/.test(window.location.hash);
+
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY,
@@ -332,7 +335,7 @@ function SetPassword({ onDone }) {
 
 export default function App() {
   const [session, setSession] = useState(undefined);
-  const [recovery, setRecovery] = useState(() => window.location.hash.includes("type=recovery"));
+  const [recovery, setRecovery] = useState(FROM_EMAIL_LINK);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
