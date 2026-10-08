@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 
 const input = "w-full rounded-lg bg-slate-950 border border-slate-700 p-2 text-slate-100";
 
+const KINDS = {
+  water: { label: "Water", unit: "unit (cubic metre)", example: "e.g. 150" },
+  electricity: { label: "Electricity", unit: "kWh", example: "e.g. 28" },
+};
+
 export default function Readings({ supabase, units }) {
   const occupied = units.filter((u) => u.state !== "vacant");
   // Current month in Nairobi time (UTC+3), as the first day of the month
@@ -12,6 +17,7 @@ export default function Readings({ supabase, units }) {
     return d.toLocaleDateString("en-KE", { month: "long", year: "numeric", timeZone: "UTC" });
   };
 
+  const [kind, setKind] = useState("water");
   const [rate, setRate] = useState("");
   const [prev, setPrev] = useState({});
   const [cur, setCur] = useState({});
@@ -20,8 +26,8 @@ export default function Readings({ supabase, units }) {
   useEffect(() => {
     if (occupied.length === 0) return;
     supabase.from("utility_readings")
-      .select("unit_id, period, current_reading")
-      .eq("kind", "water")
+      .select("unit_id, period, current_reading, rate")
+      .eq("kind", kind)
       .in("unit_id", occupied.map((u) => u.unit_id))
       .order("period", { ascending: false })
       .then(({ data }) => {
@@ -30,8 +36,11 @@ export default function Readings({ supabase, units }) {
           if (r.period < period && p[r.unit_id] === undefined) p[r.unit_id] = r.current_reading;
         }
         setPrev(p);
+        if (data?.length) setRate(String(data[0].rate)); // start from the last rate used
       });
-  }, [units]);
+  }, [units, kind]);
+
+  const pick = (k) => { setKind(k); setPrev({}); setCur({}); setRate(""); setMsg(""); };
 
   const save = async () => {
     if (!(Number(rate) > 0)) return setMsg("Error: enter the rate per unit first.");
@@ -42,7 +51,7 @@ export default function Readings({ supabase, units }) {
       const p = Number(prev[u.unit_id] ?? 0);
       if (Number(c) < p) return setMsg(`Error: ${u.unit_number} current reading is lower than previous.`);
       rows.push({
-        unit_id: u.unit_id, kind: "water", period,
+        unit_id: u.unit_id, kind, period,
         previous_reading: p, current_reading: Number(c), rate: Number(rate),
       });
     }
@@ -56,16 +65,23 @@ export default function Readings({ supabase, units }) {
 
   return (
     <div className="space-y-4">
+      <div className="flex gap-2">
+        {Object.entries(KINDS).map(([k, v]) => (
+          <button key={k} onClick={() => pick(k)}
+            className={`rounded-lg px-4 py-2 text-sm ${kind === k ? "bg-emerald-600 text-white" : "border border-slate-700 text-slate-300"}`}>{v.label}</button>
+        ))}
+      </div>
+
       <div>
-        <h3 className="font-medium text-white">Water readings for {monthName(period)}</h3>
+        <h3 className="font-medium text-white">{KINDS[kind].label} readings for {monthName(period)}</h3>
         <p className="text-xs text-slate-400">
           These are billed on the {monthName(period, 1)} invoices. Leave a unit blank to skip it.
         </p>
       </div>
 
       <div>
-        <label className="text-xs text-slate-400">Rate per unit (KES)</label>
-        <input className={input} type="number" placeholder="e.g. 150" value={rate}
+        <label className="text-xs text-slate-400">Rate per {KINDS[kind].unit} (KES)</label>
+        <input className={input} type="number" placeholder={KINDS[kind].example} value={rate}
           onChange={(e) => setRate(e.target.value)} />
       </div>
 
