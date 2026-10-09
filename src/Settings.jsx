@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { PageHead, Modal, inputCls } from "./ui.jsx";
 
-export default function Settings({ supabase, propertyId }) {
+export default function Settings({ supabase, propertyId, canEdit = true }) {
   const [me, setMe] = useState({ full_name: "", phone: "" });
   const [prop, setProp] = useState({ name: "", code: "", pay_shortcode: "", address: "" });
   const [msg, setMsg] = useState("");
@@ -76,12 +76,13 @@ export default function Settings({ supabase, propertyId }) {
       </section>
       <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
         <h3 className="font-medium text-white">This property</h3>
-        <Field label="Name" value={prop.name} onChange={(v) => setProp({ ...prop, name: v })} />
+        <Field label="Name" value={prop.name} disabled={!canEdit} onChange={(v) => setProp({ ...prop, name: v })} />
         <Field label="Code (cannot be changed, tenants use it in account numbers)" value={prop.code} disabled onChange={() => {}} />
-        <Field label="Paybill or Till number" value={prop.pay_shortcode} onChange={(v) => setProp({ ...prop, pay_shortcode: v })} />
-        <Field label="Address" value={prop.address} onChange={(v) => setProp({ ...prop, address: v })} />
-        <button className={btn} disabled={!prop.name.trim()} onClick={saveProp}>Save property</button>
+        <Field label="Paybill or Till number" value={prop.pay_shortcode} disabled={!canEdit} onChange={(v) => setProp({ ...prop, pay_shortcode: v })} />
+        <Field label="Address" value={prop.address} disabled={!canEdit} onChange={(v) => setProp({ ...prop, address: v })} />
+        {canEdit ? <button className={btn} disabled={!prop.name.trim()} onClick={saveProp}>Save property</button> : <p className="text-xs text-slate-400">Only an owner can change property details.</p>}
       </section>
+      {canEdit && (
       <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
         <h3 className="font-medium text-white">Team for this property</h3>
         <p className="text-xs text-slate-400">Caretakers can view the property and record readings, maintenance and security notes. A co-manager (owner) can also add and delete units and tenants and invite others.</p>
@@ -102,6 +103,7 @@ export default function Settings({ supabase, propertyId }) {
         </div>
         {invMsg && <p className="text-sm text-red-400">{invMsg}</p>}
       </section>
+      )}
       {link && (
         <Modal title="Invitation ready" onClose={() => setLink(null)}>
           <p className="mb-3 text-sm text-slate-300">

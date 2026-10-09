@@ -10,7 +10,7 @@ const LABEL = { none: "No deposit", pending: "Not received yet", held: "Held", r
 const CLS = { none: "text-slate-500", pending: "text-amber-300", held: "text-emerald-300", refunded: "text-slate-300" };
 const sum = (rows, fn) => rows.reduce((s, r) => s + fn(r), 0);
 
-export default function Deposits({ supabase, units, onChanged }) {
+export default function Deposits({ supabase, units, onChanged, canEdit = true }) {
   const [rows, setRows] = useState([]);
   const [tick, setTick] = useState(0);
   const [dlg, setDlg] = useState(null);
@@ -74,8 +74,8 @@ export default function Deposits({ supabase, units, onChanged }) {
               <td className="px-4 py-3">{Number(t.deposit_amount) > 0 ? kes(t.deposit_amount) : "—"}{st === "refunded" && <div className="text-xs text-slate-400">Refunded {kes(t.deposit_refund_amount)} on {t.deposit_refunded_on}{t.deposit_note ? ` · ${t.deposit_note}` : ""}</div>}</td>
               <td className={`px-4 py-3 ${CLS[st]}`}>{LABEL[st]}</td>
               <td className="space-x-3 whitespace-nowrap px-4 py-3">
-                {st !== "refunded" && <button className="text-emerald-300" onClick={() => openSet(t)}>{st === "none" ? "Set deposit" : "Edit"}</button>}
-                {st === "held" && <button className="text-amber-300" onClick={() => openRefund(t)}>Refund</button>}
+                {canEdit && st !== "refunded" && <button className="text-emerald-300" onClick={() => openSet(t)}>{st === "none" ? "Set deposit" : "Edit"}</button>}
+                {canEdit && st === "held" && <button className="text-amber-300" onClick={() => openRefund(t)}>Refund</button>}
               </td>
             </tr>
           );

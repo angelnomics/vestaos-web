@@ -2,7 +2,7 @@ import { useState } from "react";
 import { kes, Badge, PageHead, Table, inputCls } from "./ui.jsx";
 import { AddUnit, btnPrimary, btnDanger, guardedDelete } from "./Actions.jsx";
 
-export default function Units({ supabase, propertyId, units, onSelect, onChanged }) {
+export default function Units({ supabase, propertyId, units, onSelect, onChanged, canEdit = true }) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [adding, setAdding] = useState(false);
@@ -25,7 +25,7 @@ export default function Units({ supabase, propertyId, units, onSelect, onChanged
   return (
     <div className="space-y-4">
       <PageHead title="Units" hint="Occupancy and account balances for this property.">
-        <button className={btnPrimary} disabled={!propertyId} onClick={() => setAdding(true)}>+ Add unit</button>
+        {canEdit && <button className={btnPrimary} disabled={!propertyId} onClick={() => setAdding(true)}>+ Add unit</button>}
       </PageHead>
       {msg && <p className="text-sm text-red-400">{msg}</p>}
       <div className="flex flex-wrap gap-2">
@@ -46,7 +46,7 @@ export default function Units({ supabase, propertyId, units, onSelect, onChanged
             <td className="px-4 py-3">{kes(u.balance)}</td>
             <td className="space-x-3 whitespace-nowrap px-4 py-3">
               {u.state !== "vacant" && <button className="text-emerald-300" onClick={() => onSelect(u)}>View</button>}
-              <button className={btnDanger} onClick={() => remove(u)}>Delete</button>
+              {canEdit && <button className={btnDanger} onClick={() => remove(u)}>Delete</button>}
             </td>
           </tr>
         ))}

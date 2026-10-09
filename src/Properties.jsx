@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { kes, PageHead } from "./ui.jsx";
 import { AddProperty, btnPrimary, btnDanger, guardedDelete } from "./Actions.jsx";
 
-export default function Properties({ supabase, properties, onOpen, onChanged }) {
+export default function Properties({ supabase, properties, onOpen, onChanged, ownedIds = new Set() }) {
   const [stats, setStats] = useState({});
   const [adding, setAdding] = useState(false);
   const [msg, setMsg] = useState("");
@@ -34,7 +34,7 @@ export default function Properties({ supabase, properties, onOpen, onChanged }) 
   return (
     <div className="space-y-4">
       <PageHead title="Properties" hint="Tap a property to open its dashboard.">
-        <button className={btnPrimary} onClick={() => setAdding(true)}>+ Add property</button>
+        {(ownedIds.size > 0 || properties.length === 0) && <button className={btnPrimary} onClick={() => setAdding(true)}>+ Add property</button>}
       </PageHead>
       {msg && <p className="text-sm text-red-400">{msg}</p>}
       {properties.length === 0 && <p className="text-sm text-slate-500">No properties yet. Use + Add property.</p>}
@@ -45,7 +45,7 @@ export default function Properties({ supabase, properties, onOpen, onChanged }) 
             <div key={p.id} onClick={() => onOpen(p.id)} className="cursor-pointer rounded-xl border border-slate-800 bg-slate-900/50 p-4 hover:border-emerald-600">
               <div className="flex items-start justify-between gap-2">
                 <div className="text-lg font-semibold text-white">{p.name}</div>
-                <button className={btnDanger} onClick={(e) => { e.stopPropagation(); remove(p); }}>Delete</button>
+                {ownedIds.has(p.id) && <button className={btnDanger} onClick={(e) => { e.stopPropagation(); remove(p); }}>Delete</button>}
               </div>
               <div className="mt-2 grid grid-cols-3 gap-2 text-center text-xs text-slate-400">
                 <div><div className="text-base font-semibold text-white">{s.units}</div>Units</div>

@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { kes, Badge, PageHead, Table, Modal, Row, inputCls } from "./ui.jsx";
 import { downloadCsv, printDoc, esc, money, day, btnGhost } from "./export.js";
 
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const used = (u) => Number(u.current_reading) - Number(u.previous_reading);
+
 export default function Invoices({ supabase, units }) {
   const [rows, setRows] = useState([]);
   const [q, setQ] = useState("");
@@ -24,7 +27,11 @@ export default function Invoices({ supabase, units }) {
       const { data: al } = await supabase.from("payment_allocations").select("amount, payment_id").eq("invoice_id", sel.invoice_id);
       const ids = (al ?? []).map((a) => a.payment_id);
       const { data: pay } = ids.length ? await supabase.from("payments").select("id, trans_id, paid_at, payer_name").in("id", ids) : { data: [] };
-      setDet({ inv, al: al ?? [], pay: Object.fromEntries((pay ?? []).map((p) => [p.id, p])) });
+      const [py, pm] = sel.period.slice(0, 7).split("-").map(Number);
+      const prevPeriod = pm === 1 ? `${py - 1}-12-01` : `${py}-${String(pm - 1).padStart(2, "0")}-01`;
+      const { data: util } = await supabase.from("utility_readings")
+        .select("kind, previous_reading, current_reading, rate, amount").eq("unit_id", sel.unit_id).eq("period", prevPeriod);
+      setDet({ inv, al: al ?? [], pay: Object.fromEntries((pay ?? []).map((p) => [p.id, p])), util: util ?? [] });
     })();
   }, [sel]);
 
@@ -44,6 +51,7 @@ export default function Invoices({ supabase, units }) {
         <tr><th>Description</th><th class="r">Amount</th></tr>
         <tr><td>Rent</td><td class="r">${det?.inv ? money(det.inv.rent_amount) : ""}</td></tr>
         <tr><td>Utilities</td><td class="r">${det?.inv ? money(det.inv.utilities_amount) : ""}</td></tr>
+        ${(det?.util ?? []).map((u) => `<tr><td class="muted">&nbsp;&nbsp;${esc(cap(u.kind))}: ${used(u)} × ${money(u.rate)}</td><td class="r muted">${money(u.amount)}</td></tr>`).join("")}
         <tr class="total"><td>Total</td><td class="r">${money(sel.total)}</td></tr>
       </table>
       ${paid ? `<p class="muted">Payments received</p><table>${paid}</table>` : ""}
@@ -78,6 +86,9 @@ export default function Invoices({ supabase, units }) {
           <Row label="Period">{new Date(sel.period).toLocaleDateString("en-KE", { month: "long", year: "numeric" })}</Row>
           <Row label="Rent">{det?.inv && kes(det.inv.rent_amount)}</Row>
           <Row label="Utilities">{det?.inv && kes(det.inv.utilities_amount)}</Row>
+          {(det?.util ?? []).map((u, k) => (
+            <Row key={k} label={`   · ${cap(u.kind)}: ${used(u)} × ${kes(u.rate)}`}>{kes(u.amount)}</Row>
+          ))}
           <Row label="Total">{kes(sel.total)}</Row>
           <Row label="Paid">{kes(sel.paid)}</Row>
           <Row label="Balance">{kes(sel.balance)}</Row>

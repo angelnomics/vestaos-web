@@ -3,7 +3,7 @@ import { kes, PageHead, Table, Modal, Row, inputCls } from "./ui.jsx";
 import { btnPrimary } from "./Actions.jsx";
 import { downloadCsv, printDoc, esc, money, day, btnGhost } from "./export.js";
 
-export default function Payments({ supabase, propertyId, units = [], onChanged }) {
+export default function Payments({ supabase, propertyId, units = [], onChanged, canEdit = true }) {
   const [rows, setRows] = useState([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
@@ -74,7 +74,7 @@ export default function Payments({ supabase, propertyId, units = [], onChanged }
           <button className={btnGhost} disabled={shown.length === 0} onClick={() => downloadCsv("sova-payments.csv",
             ["M-Pesa code", "Payer", "Phone", "Account reference", "Amount", "Date", "Match status"],
             shown.map((p) => [p.trans_id, p.payer_name, p.msisdn, p.account_key, Number(p.amount), p.paid_at?.slice(0, 10), p.match_status]))}>Download CSV</button>
-          <button className={btnPrimary} disabled={!propertyId} onClick={() => { setMsg(""); setRec(true); }}>+ Record payment</button>
+          {canEdit && <button className={btnPrimary} disabled={!propertyId} onClick={() => { setMsg(""); setRec(true); }}>+ Record payment</button>}
         </div>
       </PageHead>
       <div className="flex flex-wrap gap-2">

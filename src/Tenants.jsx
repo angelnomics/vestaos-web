@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { kes, Badge, PageHead, Table, Modal, Row, inputCls } from "./ui.jsx";
 import { AddTenant, btnPrimary, btnDanger, guardedDelete } from "./Actions.jsx";
 
-export default function Tenants({ supabase, units, onChanged }) {
+export default function Tenants({ supabase, units, onChanged, canEdit = true }) {
   const [info, setInfo] = useState({});
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(null);
@@ -49,7 +49,7 @@ export default function Tenants({ supabase, units, onChanged }) {
   return (
     <div className="space-y-4">
       <PageHead title="Tenants" hint="Current tenants, their units and balances.">
-        <button className={btnPrimary} onClick={() => setAdding(true)}>+ Add tenant</button>
+        {canEdit && <button className={btnPrimary} onClick={() => setAdding(true)}>+ Add tenant</button>}
       </PageHead>
       <input className={`${inputCls} w-full sm:w-72`} placeholder="Search tenant, unit or reference…" value={q} onChange={(e) => setQ(e.target.value)} />
       <Table head={["Tenant", "Unit", "Account ref", "Moved in", "Status", "Balance", ""]} empty="No tenants yet. Use + Add tenant.">
@@ -81,10 +81,12 @@ export default function Tenants({ supabase, units, onChanged }) {
             <Row key={i.invoice_id} label={new Date(i.period).toLocaleDateString("en-KE", { month: "short", year: "numeric" })}>{kes(i.paid)} of {kes(i.total)}</Row>
           ))}
           {msg && <p className="mt-3 text-sm text-red-400">{msg}</p>}
-          <div className="mt-4 flex gap-2">
-            <button className={btnPrimary} onClick={moveOut}>Move out</button>
-            <button className={btnDanger} onClick={remove}>Delete</button>
-          </div>
+          {canEdit && (
+            <div className="mt-4 flex gap-2">
+              <button className={btnPrimary} onClick={moveOut}>Move out</button>
+              <button className={btnDanger} onClick={remove}>Delete</button>
+            </div>
+          )}
         </Modal>
       )}
     </div>

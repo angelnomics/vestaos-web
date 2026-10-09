@@ -175,7 +175,7 @@ function UnitDrawer({ unit, onClose }) {
   );
 }
 
-function Unmatched({ propertyId, units }) {
+function Unmatched({ propertyId, units, canEdit = true }) {
   const [rows, setRows] = useState([]);
   const [pick, setPick] = useState({});
 
@@ -194,6 +194,7 @@ function Unmatched({ propertyId, units }) {
     if (error) alert(error.message); else load();
   };
 
+  if (!canEdit) return <p className="text-slate-500 text-sm">Only an owner can assign payments.</p>;
   if (rows.length === 0) return <p className="text-slate-500 text-sm">No unmatched payments.</p>;
   return (
     <div className="space-y-3">
@@ -231,11 +232,22 @@ function Dashboard() {
   const [fab, setFab] = useState(false);
   const [addKind, setAddKind] = useState(null);
 
+  const [ownedIds, setOwnedIds] = useState(new Set());
+  const isOwner = ownedIds.has(propertyId);
+
   useEffect(() => {
-    supabase.from("properties").select("id, name").order("name").then(({ data }) => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const [{ data }, { data: mem }] = await Promise.all([
+        supabase.from("properties").select("id, name, owner_id").order("name"),
+        supabase.from("property_members").select("property_id, role").eq("user_id", user.id),
+      ]);
+      const owned = new Set((data ?? []).filter((p) => p.owner_id === user.id).map((p) => p.id));
+      (mem ?? []).filter((m) => m.role === "owner").forEach((m) => owned.add(m.property_id));
+      setOwnedIds(owned);
       setProperties(data ?? []);
       setPropertyId((cur) => (data?.some((p) => p.id === cur) ? cur : data?.[0]?.id ?? null));
-    });
+    })();
   }, [tick]);
 
   useEffect(() => {
@@ -274,26 +286,28 @@ function Dashboard() {
           </div>
         </>
       )}
-      {tab === "properties" && <Properties supabase={supabase} properties={properties} onChanged={refresh} onOpen={(id) => { setPropertyId(id); setTab("grid"); }} />}
-      {tab === "units" && <Units supabase={supabase} propertyId={propertyId} units={units} onSelect={setSelected} onChanged={refresh} />}
-      {tab === "tenants" && <Tenants supabase={supabase} units={units} onChanged={refresh} />}
+      {tab === "properties" && <Properties supabase={supabase} properties={properties} ownedIds={ownedIds} onChanged={refresh} onOpen={(id) => { setPropertyId(id); setTab("grid"); }} />}
+      {tab === "units" && <Units supabase={supabase} propertyId={propertyId} units={units} canEdit={isOwner} onSelect={setSelected} onChanged={refresh} />}
+      {tab === "tenants" && <Tenants supabase={supabase} units={units} canEdit={isOwner} onChanged={refresh} />}
       {tab === "invoices" && <Invoices supabase={supabase} units={units} />}
-      {tab === "payments" && <Payments supabase={supabase} propertyId={propertyId} units={units} onChanged={refresh} />}
-      {tab === "unmatched" && (<><PageHead title="Unmatched payments" hint="Assign these to a unit." /><Unmatched propertyId={propertyId} units={units} /></>)}
-      {tab === "deposits" && <Deposits supabase={supabase} units={units} onChanged={refresh} />}
+      {tab === "payments" && <Payments supabase={supabase} propertyId={propertyId} units={units} canEdit={isOwner} onChanged={refresh} />}
+      {tab === "unmatched" && (<><PageHead title="Unmatched payments" hint="Assign these to a unit." /><Unmatched propertyId={propertyId} units={units} canEdit={isOwner} /></>)}
+      {tab === "deposits" && <Deposits supabase={supabase} units={units} canEdit={isOwner} onChanged={refresh} />}
       {tab === "reports" && <Reports supabase={supabase} units={units} />}
       {tab === "maintenance" && <Maintenance supabase={supabase} propertyId={propertyId} units={units} />}
       {tab === "security" && <Security supabase={supabase} propertyId={propertyId} />}
       {tab === "sms" && <Sms supabase={supabase} units={units} />}
-      {tab === "settings" && <Settings supabase={supabase} propertyId={propertyId} />}
+      {tab === "settings" && <Settings supabase={supabase} propertyId={propertyId} canEdit={isOwner} />}
       {tab === "readings" && <Readings supabase={supabase} units={units} />}
       {tab === "manage" && <Manage supabase={supabase} propertyId={propertyId} properties={properties} units={units} />}
+      {(isOwner || properties.length === 0) && (
       <div className="fixed bottom-5 right-5 z-20 flex flex-col items-end gap-2">
-        {fab && [["property", "Add property"], ["unit", "Add unit"], ["tenant", "Add tenant"]].map(([k, label]) => (
+        {fab && [["property", "Add property"], ...(isOwner ? [["unit", "Add unit"], ["tenant", "Add tenant"]] : [])].map(([k, label]) => (
           <button key={k} className="rounded-full bg-slate-800 px-4 py-2 text-sm text-white shadow-lg" onClick={() => { setAddKind(k); setFab(false); }}>{label}</button>
         ))}
         <button aria-label="Quick add" className="grid h-14 w-14 place-items-center rounded-full bg-emerald-600 text-3xl text-white shadow-lg" onClick={() => setFab(!fab)}>{fab ? "×" : "+"}</button>
       </div>
+      )}
       {addKind === "property" && <AddProperty supabase={supabase} onClose={() => setAddKind(null)} onDone={refresh} />}
       {addKind === "unit" && <AddUnit supabase={supabase} propertyId={propertyId} onClose={() => setAddKind(null)} onDone={refresh} />}
       {addKind === "tenant" && <AddTenant supabase={supabase} units={units} onClose={() => setAddKind(null)} onDone={refresh} />}
