@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, inputCls } from "./ui.jsx";
+import { normalizePhone, PHONE_HINT } from "./phone.js";
 
 export const btnPrimary = "rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-40";
 export const btnDanger = "rounded-lg border border-red-500/50 px-3 py-1 text-xs text-red-300 hover:bg-red-500/10";
@@ -73,10 +74,14 @@ export function AddTenant({ supabase, units, onClose, onDone }) {
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   return (
     <Form title="Add a tenant" onClose={onClose} onDone={onDone} canSave={f.unitId && f.name.trim() && f.phone.trim()}
-      save={async () => (await supabase.from("tenants").insert({
-        unit_id: f.unitId, full_name: f.name.trim(), phone: f.phone.trim(),
-        ...(Number(f.deposit) > 0 ? { deposit_amount: Number(f.deposit), deposit_received_on: f.received || null } : {}),
-      })).error}>
+      save={async () => {
+        const phone = normalizePhone(f.phone);
+        if (!phone) return { message: PHONE_HINT };
+        return (await supabase.from("tenants").insert({
+          unit_id: f.unitId, full_name: f.name.trim(), phone,
+          ...(Number(f.deposit) > 0 ? { deposit_amount: Number(f.deposit), deposit_received_on: f.received || null } : {}),
+        })).error;
+      }}>
       <select className={`${inputCls} w-full`} value={f.unitId} onChange={set("unitId")}>
         <option value="">{vacant.length ? "Choose a vacant unit…" : "No vacant units. Add a unit first."}</option>
         {vacant.map((u) => <option key={u.unit_id} value={u.unit_id}>{u.account_ref}</option>)}
@@ -88,6 +93,48 @@ export function AddTenant({ supabase, units, onClose, onDone }) {
         <label className="block text-xs text-slate-400">Deposit received on<input className={`${inputCls} mt-1 w-full`} type="date" value={f.received} onChange={set("received")} /></label>
       )}
       <p className="text-xs text-slate-400">Rent is billed from the next 1st of the month.</p>
+    </Form>
+  );
+}
+
+const changed = async (q) => {
+  const { data, error } = await q.select("id");
+  if (error) return error;
+  if (!data?.length) return { message: "Nothing was saved. Only an owner can make this change." };
+  return null;
+};
+
+export function EditUnit({ supabase, unit, onClose, onDone }) {
+  const [f, setF] = useState({ number: unit.unit_number, rent: "" });
+  useEffect(() => {
+    supabase.from("units").select("rent_amount").eq("id", unit.unit_id).maybeSingle()
+      .then(({ data }) => data && setF((x) => ({ ...x, rent: String(data.rent_amount) })));
+  }, []);
+  return (
+    <Form title={`Edit unit ${unit.unit_number}`} onClose={onClose} onDone={onDone} canSave={f.number.trim() && Number(f.rent) > 0}
+      save={() => changed(supabase.from("units").update({ unit_number: f.number.trim(), rent_amount: Number(f.rent) }).eq("id", unit.unit_id))}>
+      <label className="block text-xs text-slate-400">Unit number<input className={`${inputCls} mt-1 w-full`} value={f.number} onChange={(e) => setF({ ...f, number: e.target.value })} /></label>
+      <label className="block text-xs text-slate-400">Monthly rent (KES)<input className={`${inputCls} mt-1 w-full`} type="number" value={f.rent} onChange={(e) => setF({ ...f, rent: e.target.value })} /></label>
+      <p className="text-xs text-amber-300">A new rent applies from the next invoice. Invoices already created keep the old amount. Changing the unit number also changes its account number, so tell the tenant.</p>
+    </Form>
+  );
+}
+
+export function EditTenant({ supabase, tenantId, onClose, onDone }) {
+  const [f, setF] = useState({ name: "", phone: "" });
+  useEffect(() => {
+    supabase.from("tenants").select("full_name, phone").eq("id", tenantId).maybeSingle()
+      .then(({ data }) => data && setF({ name: data.full_name, phone: data.phone }));
+  }, []);
+  return (
+    <Form title="Edit tenant" onClose={onClose} onDone={onDone} canSave={f.name.trim() && f.phone.trim()}
+      save={() => {
+        const phone = normalizePhone(f.phone);
+        if (!phone) return { message: PHONE_HINT };
+        return changed(supabase.from("tenants").update({ full_name: f.name.trim(), phone }).eq("id", tenantId));
+      }}>
+      <label className="block text-xs text-slate-400">Full name<input className={`${inputCls} mt-1 w-full`} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></label>
+      <label className="block text-xs text-slate-400">Phone<input className={`${inputCls} mt-1 w-full`} value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></label>
     </Form>
   );
 }

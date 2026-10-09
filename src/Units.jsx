@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { kes, Badge, PageHead, Table, inputCls } from "./ui.jsx";
-import { AddUnit, btnPrimary, btnDanger, guardedDelete } from "./Actions.jsx";
+import { AddUnit, EditUnit, btnPrimary, btnDanger, guardedDelete } from "./Actions.jsx";
 
 export default function Units({ supabase, propertyId, units, onSelect, onChanged, canEdit = true }) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [msg, setMsg] = useState("");
   const rows = units.filter((u) =>
     (!status || u.state === status) &&
@@ -46,11 +47,13 @@ export default function Units({ supabase, propertyId, units, onSelect, onChanged
             <td className="px-4 py-3">{kes(u.balance)}</td>
             <td className="space-x-3 whitespace-nowrap px-4 py-3">
               {u.state !== "vacant" && <button className="text-emerald-300" onClick={() => onSelect(u)}>View</button>}
+              {canEdit && <button className="text-slate-300" onClick={() => setEditing(u)}>Edit</button>}
               {canEdit && <button className={btnDanger} onClick={() => remove(u)}>Delete</button>}
             </td>
           </tr>
         ))}
       </Table>
+      {editing && <EditUnit supabase={supabase} unit={editing} onClose={() => setEditing(null)} onDone={onChanged} />}
       {adding && <AddUnit supabase={supabase} propertyId={propertyId} onClose={() => setAdding(false)} onDone={onChanged} />}
     </div>
   );

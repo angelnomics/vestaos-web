@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { kes, Badge, PageHead, Table, Modal, Row, inputCls } from "./ui.jsx";
-import { AddTenant, btnPrimary, btnDanger, guardedDelete } from "./Actions.jsx";
+import { AddTenant, EditTenant, btnPrimary, btnDanger, guardedDelete } from "./Actions.jsx";
 
 export default function Tenants({ supabase, units, onChanged, canEdit = true }) {
   const [info, setInfo] = useState({});
@@ -8,6 +8,7 @@ export default function Tenants({ supabase, units, onChanged, canEdit = true }) 
   const [sel, setSel] = useState(null);
   const [invs, setInvs] = useState([]);
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [msg, setMsg] = useState("");
   const occupied = units.filter((u) => u.state !== "vacant");
 
@@ -65,6 +66,7 @@ export default function Tenants({ supabase, units, onChanged, canEdit = true }) 
           </tr>
         ))}
       </Table>
+      {editing && <EditTenant supabase={supabase} tenantId={editing} onClose={() => setEditing(null)} onDone={() => { setSel(null); onChanged(); }} />}
       {adding && <AddTenant supabase={supabase} units={units} onClose={() => setAdding(false)} onDone={onChanged} />}
       {sel && (
         <Modal title={sel.tenant_name} onClose={() => setSel(null)}>
@@ -83,6 +85,7 @@ export default function Tenants({ supabase, units, onChanged, canEdit = true }) 
           {msg && <p className="mt-3 text-sm text-red-400">{msg}</p>}
           {canEdit && (
             <div className="mt-4 flex gap-2">
+              <button className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800" onClick={() => setEditing(info[sel.unit_id]?.id)}>Edit details</button>
               <button className={btnPrimary} onClick={moveOut}>Move out</button>
               <button className={btnDanger} onClick={remove}>Delete</button>
             </div>
