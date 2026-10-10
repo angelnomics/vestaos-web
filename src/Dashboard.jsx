@@ -290,7 +290,7 @@ function Dashboard() {
       {tab === "properties" && <Properties supabase={supabase} properties={properties} ownedIds={ownedIds} onChanged={refresh} onOpen={(id) => { setPropertyId(id); setTab("grid"); }} />}
       {tab === "units" && <Units supabase={supabase} propertyId={propertyId} units={units} canEdit={isOwner} onSelect={setSelected} onChanged={refresh} />}
       {tab === "tenants" && <Tenants supabase={supabase} units={units} canEdit={isOwner} onChanged={refresh} />}
-      {tab === "invoices" && <Invoices supabase={supabase} units={units} />}
+      {tab === "invoices" && <Invoices supabase={supabase} units={units} canEdit={isOwner} />}
       {tab === "payments" && <Payments supabase={supabase} propertyId={propertyId} units={units} canEdit={isOwner} onChanged={refresh} />}
       {tab === "unmatched" && (<><PageHead title="Unmatched payments" hint="Assign these to a unit." /><Unmatched propertyId={propertyId} units={units} canEdit={isOwner} /></>)}
       {tab === "messages" && <Messages supabase={supabase} propertyId={propertyId} units={units} canEdit={isOwner} onSent={() => setTab("sms")} />}
