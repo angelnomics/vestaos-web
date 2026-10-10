@@ -17,6 +17,7 @@ import Properties from "./Properties.jsx";
 import Health from "./Health.jsx";
 import Deposits from "./Deposits.jsx";
 import Messages from "./Messages.jsx";
+import Import from "./Import.jsx";
 import Logo from "./Logo.jsx";
 import { AddProperty, AddUnit, AddTenant } from "./Actions.jsx";
 import { kes, STATES, PageHead } from "./ui.jsx";
@@ -293,6 +294,7 @@ function Dashboard() {
       {tab === "invoices" && <Invoices supabase={supabase} units={units} canEdit={isOwner} />}
       {tab === "payments" && <Payments supabase={supabase} propertyId={propertyId} units={units} canEdit={isOwner} onChanged={refresh} />}
       {tab === "unmatched" && (<><PageHead title="Unmatched payments" hint="Assign these to a unit." /><Unmatched propertyId={propertyId} units={units} canEdit={isOwner} /></>)}
+      {tab === "import" && <Import supabase={supabase} propertyId={propertyId} units={units} canEdit={isOwner} onDone={refresh} />}
       {tab === "messages" && <Messages supabase={supabase} propertyId={propertyId} units={units} canEdit={isOwner} onSent={() => setTab("sms")} />}
       {tab === "deposits" && <Deposits supabase={supabase} units={units} canEdit={isOwner} onChanged={refresh} />}
       {tab === "reports" && <Reports supabase={supabase} units={units} />}
