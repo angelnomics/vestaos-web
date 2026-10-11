@@ -18,6 +18,7 @@ import Health from "./Health.jsx";
 import Deposits from "./Deposits.jsx";
 import Messages from "./Messages.jsx";
 import Import from "./Import.jsx";
+import { TenantLogin, TenantPortal } from "./Tenant.jsx";
 import Logo from "./Logo.jsx";
 import { AddProperty, AddUnit, AddTenant } from "./Actions.jsx";
 import { kes, STATES, PageHead } from "./ui.jsx";
@@ -40,7 +41,7 @@ const FEATURES = [
   ["🔧", "Maintenance", "Track property issues from reporting through resolution."],
 ];
 
-function Login() {
+function Login({ onTenant }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -136,6 +137,7 @@ function Login() {
               {SUPPORT.phone && <a className="font-semibold text-blue-600" href={`tel:${SUPPORT.phone}`}>{SUPPORT.phone}</a>}
             </div>
           )}
+          <div className="mt-5 text-center"><button type="button" onClick={onTenant} className="text-[12px] font-semibold text-blue-600 hover:underline">Tenant? Sign in with your phone number</button></div>
         </div>
       </section>
     </div>
@@ -356,6 +358,8 @@ function SetPassword({ onDone }) {
 export default function App() {
   const [session, setSession] = useState(undefined);
   const [recovery, setRecovery] = useState(FROM_EMAIL_LINK);
+  const [tenantLogin, setTenantLogin] = useState(false);
+  const [isTenant, setIsTenant] = useState(undefined);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -366,7 +370,16 @@ export default function App() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  const uid = session?.user?.id;
+  useEffect(() => {
+    if (!uid) return setIsTenant(undefined);
+    if (session.user.user_metadata?.tenant) return setIsTenant(true);
+    supabase.rpc("tenant_portal").then(({ data }) => setIsTenant(!!data));
+  }, [uid]);
+
   if (session === undefined) return null;
   if (recovery && session) return <SetPassword onDone={() => setRecovery(false)} />;
-  return session ? <Dashboard /> : <Login />;
+  if (!session) return tenantLogin ? <TenantLogin supabase={supabase} onBack={() => setTenantLogin(false)} /> : <Login onTenant={() => setTenantLogin(true)} />;
+  if (isTenant === undefined) return null;
+  return isTenant ? <TenantPortal supabase={supabase} support={SUPPORT} /> : <Dashboard />;
 }
