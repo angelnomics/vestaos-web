@@ -5,7 +5,7 @@ import { LayoutGrid, Users, CreditCard, FileText, Inbox, Droplets, Settings, Men
 
 const NAV = [
   ["Main", [["grid", "Dashboard", LayoutGrid], ["properties", "Properties", Landmark], ["units", "Units", Building2], ["tenants", "Tenants", Users]]],
-  ["Finance", [["invoices", "Invoices", FileText], ["payments", "M-Pesa Payments", CreditCard], ["unmatched", "Unmatched", Inbox], ["deposits", "Deposits", Wallet], ["reports", "Reports", TrendingUp]]],
+  ["Finance", [["invoices", "Invoices", FileText], ["payments", "M-Pesa Payments", CreditCard], ["unmatched", "Unmatched", Inbox], ["deposits", "Deposits", Wallet], ["reports", "Reports & analytics", TrendingUp]]],
   ["Operations", [["readings", "Readings", Droplets], ["maintenance", "Maintenance", Wrench], ["security", "Security Log", ShieldCheck], ["messages", "Send message", MessageSquare], ["import", "Import data", Upload], ["sms", "SMS Outbox", Mail], ["manage", "Manage", Settings]]],
 ];
 

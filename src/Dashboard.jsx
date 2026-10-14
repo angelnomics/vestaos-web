@@ -20,7 +20,6 @@ import Messages from "./Messages.jsx";
 import Import from "./Import.jsx";
 import { TenantLogin, TenantPortal } from "./Tenant.jsx";
 import Logo from "./Logo.jsx";
-import { AddProperty, AddUnit, AddTenant } from "./Actions.jsx";
 import { kes, STATES, PageHead } from "./ui.jsx";
 
 // Read before the Supabase client clears the link from the address bar.
@@ -233,8 +232,6 @@ function Dashboard() {
   const [selected, setSelected] = useState(null);
   const [tick, setTick] = useState(0);
   const refresh = () => setTick((t) => t + 1);
-  const [fab, setFab] = useState(false);
-  const [addKind, setAddKind] = useState(null);
 
   const [ownedIds, setOwnedIds] = useState(new Set());
   const isOwner = ownedIds.has(propertyId);
@@ -299,24 +296,13 @@ function Dashboard() {
       {tab === "import" && <Import supabase={supabase} propertyId={propertyId} units={units} canEdit={isOwner} onDone={refresh} />}
       {tab === "messages" && <Messages supabase={supabase} propertyId={propertyId} units={units} canEdit={isOwner} onSent={() => setTab("sms")} />}
       {tab === "deposits" && <Deposits supabase={supabase} units={units} canEdit={isOwner} onChanged={refresh} />}
-      {tab === "reports" && <Reports supabase={supabase} units={units} />}
+      {tab === "reports" && <Reports supabase={supabase} propertyId={propertyId} units={units} />}
       {tab === "maintenance" && <Maintenance supabase={supabase} propertyId={propertyId} units={units} />}
       {tab === "security" && <Security supabase={supabase} propertyId={propertyId} />}
       {tab === "sms" && <Sms supabase={supabase} units={units} />}
       {tab === "settings" && <Settings supabase={supabase} propertyId={propertyId} canEdit={isOwner} />}
       {tab === "readings" && <Readings supabase={supabase} units={units} />}
       {tab === "manage" && <Manage supabase={supabase} propertyId={propertyId} properties={properties} units={units} />}
-      {(isOwner || properties.length === 0) && (
-      <div className="fixed bottom-5 right-5 z-20 flex flex-col items-end gap-2">
-        {fab && [["property", "Add property"], ...(isOwner ? [["unit", "Add unit"], ["tenant", "Add tenant"]] : [])].map(([k, label]) => (
-          <button key={k} className="rounded-full bg-slate-800 px-4 py-2 text-sm text-white shadow-lg" onClick={() => { setAddKind(k); setFab(false); }}>{label}</button>
-        ))}
-        <button aria-label="Quick add" className="grid h-14 w-14 place-items-center rounded-full bg-emerald-600 text-3xl text-white shadow-lg" onClick={() => setFab(!fab)}>{fab ? "×" : "+"}</button>
-      </div>
-      )}
-      {addKind === "property" && <AddProperty supabase={supabase} onClose={() => setAddKind(null)} onDone={refresh} />}
-      {addKind === "unit" && <AddUnit supabase={supabase} propertyId={propertyId} onClose={() => setAddKind(null)} onDone={refresh} />}
-      {addKind === "tenant" && <AddTenant supabase={supabase} units={units} onClose={() => setAddKind(null)} onDone={refresh} />}
       {selected && <UnitDrawer unit={selected} onClose={() => setSelected(null)} />}
     </Layout>
   );
