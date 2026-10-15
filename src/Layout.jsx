@@ -58,10 +58,12 @@ export default function Layout({ page, setPage, properties, propertyId, setPrope
       <div className="md:ml-60">
         <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-slate-800 bg-slate-950/90 p-3 backdrop-blur">
           <button className="md:hidden" aria-label="Menu" onClick={() => setOpen(true)}><Menu className="text-slate-300" /></button>
-          <select className="rounded-lg bg-slate-900 border border-slate-700 p-2 text-sm"
-            value={propertyId ?? ""} onChange={(e) => setPropertyId(e.target.value)}>
-            {properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          {properties.length > 0 && (
+            <div className="text-sm text-slate-400">
+              <span className="font-medium text-white">{properties.find((p) => p.id === propertyId)?.name ?? ""}</span>
+              {properties.length > 1 && <button className="ml-2 text-emerald-300 hover:underline" onClick={() => setPage("grid")}>Change</button>}
+            </div>
+          )}
         </header>
         <main className="mx-auto max-w-5xl space-y-4 p-4">{children}</main>
       </div>

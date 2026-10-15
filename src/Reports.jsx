@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { kes, PageHead, Table, inputCls } from "./ui.jsx";
 import { downloadCsv, printDoc, esc, money, btnGhost } from "./export.js";
 import { compute, BUCKETS } from "./analytics.js";
@@ -9,6 +11,16 @@ const KIND_COLORS = { water: "#38BDF8", electricity: "#FBBF24", garbage: "#A78BF
 const pct = (v) => (v == null ? "—" : Math.round(v * 100) + "%");
 const card = "rounded-xl border border-slate-800 bg-slate-900/50 p-4";
 
+// Draws a chart component to plain HTML, so it can go into the printable report.
+function toHtml(element) {
+  const div = document.createElement("div");
+  const root = createRoot(div);
+  flushSync(() => root.render(element));
+  const html = div.innerHTML;
+  root.unmount();
+  return html;
+}
+
 async function inChunks(ids, run, size = 80) {
   const parts = [];
   for (let i = 0; i < ids.length; i += size) parts.push(ids.slice(i, i + size));
@@ -16,7 +28,7 @@ async function inChunks(ids, run, size = 80) {
   return res.flatMap((r) => r.data ?? []);
 }
 
-export default function Reports({ supabase, propertyId, units }) {
+export default function Reports({ supabase, propertyId, propertyName = "", units }) {
   const [range, setRange] = useState("6m");
   const [data, setData] = useState(null);
   const [q, setQ] = useState("");
@@ -62,22 +74,51 @@ export default function Reports({ supabase, propertyId, units }) {
   const csvArrears = () => downloadCsv("sova-arrears.csv", ["Unit", "Tenant", "Amount owed", "Days overdue (oldest)", "Unpaid invoices"],
     r.arrears.map((a) => [a.unit, a.tenant ?? "", a.owed, Math.max(0, a.oldest), a.invoices]));
 
-  const print = () => printDoc("Report", `
-    <div class="brand"><b>SOVA</b><span>Report · ${esc(RANGES[range])}</span></div>
-    <h1>Collection summary</h1>
-    <table>
-      <tr><td>Billed</td><td class="r">${money(r.billed)}</td></tr><tr><td>Collected</td><td class="r">${money(r.collected)}</td></tr>
-      <tr><td>Outstanding (this period)</td><td class="r">${money(r.outstanding)}</td></tr><tr class="total"><td>Collection rate</td><td class="r">${pct(r.rate)}</td></tr>
-      <tr><td>Occupancy</td><td class="r">${r.units.occupied} of ${r.units.total} units</td></tr>
-      <tr><td>Overdue right now</td><td class="r">${money(r.overdueTotal)}</td></tr>
-      <tr><td>Deposits held</td><td class="r">${money(r.depositsHeld)}</td></tr>
-    </table>
-    <p class="muted">By month</p>
-    <table><tr><th>Month</th><th class="r">Billed</th><th class="r">Collected</th><th class="r">Outstanding</th><th class="r">Rate</th></tr>
-      ${r.monthly.map((m) => `<tr><td>${esc(monthLabel(m.month))}</td><td class="r">${money(m.billed)}</td><td class="r">${money(m.collected)}</td><td class="r">${money(m.outstanding)}</td><td class="r">${pct(m.rate)}</td></tr>`).join("")}</table>
-    <p class="muted">Money owed, by age</p>
-    <table>${r.ageing.map((a) => `<tr><td>${esc(a.name)}</td><td class="r">${money(a.value)}</td></tr>`).join("")}</table>
-    ${r.arrears.length ? `<p class="muted">Largest balances</p><table><tr><th>Unit</th><th>Tenant</th><th class="r">Owed</th></tr>${r.arrears.slice(0, 10).map((a) => `<tr><td>${esc(a.unit)}</td><td>${esc(a.tenant ?? "")}</td><td class="r">${money(a.owed)}</td></tr>`).join("")}</table>` : ""}`);
+  const csvAll = () => {
+    const blank = [], rows = [];
+    const section = (title, head, body) => { rows.push([title], head, ...body, blank); };
+    section("Summary", ["Measure", "Value"], [
+      ["Billed", r.billed], ["Collected", r.collected], ["Outstanding (this period)", r.outstanding], ["Collection rate", pct(r.rate)],
+      ["Occupancy", `${r.units.occupied} of ${r.units.total} units`], ["Overdue right now", r.overdueTotal], ["Paid on time", pct(r.onTimeRate)], ["Deposits held", r.depositsHeld],
+    ]);
+    section("Month by month", ["Month", "Invoices", "Billed", "Collected", "Outstanding", "Collection rate"],
+      r.monthly.map((m) => [m.month, m.count, m.billed, m.collected, m.outstanding, pct(m.rate)]));
+    section("Money owed, by how late", ["Age", "Invoices", "Amount"], r.ageing.map((a) => [a.name, a.count, a.value]));
+    section("Largest balances", ["Unit", "Tenant", "Owed", "Oldest overdue (days)"], r.arrears.map((a) => [a.unit, a.tenant ?? "", a.owed, Math.max(0, a.oldest)]));
+    section("Performance by unit", ["Unit", "Tenant", "Billed", "Paid", "Balance", "Payments", "Rate"],
+      r.unitRows.map((u) => [u.unit, u.tenant ?? "", u.billed, u.paid, u.balance, u.payments, pct(u.rate)]));
+    downloadCsv("sova-full-report.csv", [`SOVA report: ${propertyName}`, RANGES[range], `Generated ${today}`], rows);
+  };
+
+  const print = () => {
+    const chart = (title, node) => `<h2>${esc(title)}</h2><div class="chart">${toHtml(node)}</div>`;
+    const payDays = r.payDays.some((c) => c > 0);
+    printDoc("Report", `
+      <div class="brand"><b>SOVA</b><span>Report · ${esc(RANGES[range])}</span></div>
+      <h1>${esc(propertyName || "Property report")}</h1>
+      <p class="muted">Generated ${esc(today)}</p>
+      <table>
+        <tr><td>Billed</td><td class="r">${money(r.billed)}</td></tr><tr><td>Collected</td><td class="r">${money(r.collected)}</td></tr>
+        <tr><td>Outstanding (this period)</td><td class="r">${money(r.outstanding)}</td></tr><tr class="total"><td>Collection rate</td><td class="r">${pct(r.rate)}</td></tr>
+        <tr><td>Occupancy</td><td class="r">${r.units.occupied} of ${r.units.total} units</td></tr>
+        <tr><td>Overdue right now</td><td class="r">${money(r.overdueTotal)}</td></tr>
+        <tr><td>Paid on time</td><td class="r">${pct(r.onTimeRate)}</td></tr>
+        <tr><td>Deposits held</td><td class="r">${money(r.depositsHeld)}</td></tr>
+      </table>
+      ${chart("Billed vs collected", <BarChart light labels={labels} series={[{ name: "Billed", color: "#2563EB", values: r.monthly.map((m) => m.billed) }, { name: "Collected", color: "#059669", values: r.monthly.map((m) => m.collected) }]} tip={kes} />)}
+      ${chart("Collection rate by month", <LineChart light color="#059669" labels={labels} values={r.monthly.map((m) => m.rate)} />)}
+      <h2>Where the billing comes from</h2>
+      <table><tr><td>Rent</td><td class="r">${money(r.breakdown.rent)}</td></tr><tr><td>Utilities</td><td class="r">${money(r.breakdown.util)}</td></tr><tr><td>Charges and credits (net)</td><td class="r">${money(r.breakdown.adj)}</td></tr></table>
+      <h2>Money owed, by how late</h2>
+      <table>${r.ageing.map((a) => `<tr><td>${esc(a.name)} (${a.count})</td><td class="r">${money(a.value)}</td></tr>`).join("")}</table>
+      ${payDays ? chart("When tenants pay (payments by day of the month)", <BarChart light height={170} labels={r.payDays.map((_, i) => String(i + 1))} series={[{ name: "Payments", color: "#7C3AED", values: r.payDays }]} fmt={(v) => String(Math.round(v))} tip={(v) => `${v} payment${v === 1 ? "" : "s"}`} />) : ""}
+      ${r.utilMonths.length ? chart("Water and electricity charges", <StackedBars light height={170} labels={r.utilMonths.map(monthLabel)} tip={kes} series={r.utilKinds.map((k) => ({ name: k[0].toUpperCase() + k.slice(1), color: KIND_COLORS[k] ?? "#94A3B8", values: r.utilMonths.map((m) => r.uMonths[m][k] ?? 0) }))} />) : ""}
+      ${r.arrears.length ? `<h2>Largest balances right now</h2><table><tr><th>Unit</th><th>Tenant</th><th class="r">Owed</th><th class="r">Oldest overdue</th></tr>${r.arrears.slice(0, 10).map((a) => `<tr><td>${esc(a.unit)}</td><td>${esc(a.tenant ?? "")}</td><td class="r">${money(a.owed)}</td><td class="r">${a.oldest > 0 ? a.oldest + " days" : "not yet due"}</td></tr>`).join("")}</table>` : ""}
+      <h2>Month by month</h2>
+      <table><tr><th>Month</th><th class="r">Billed</th><th class="r">Collected</th><th class="r">Outstanding</th><th class="r">Rate</th></tr>
+        ${r.monthly.map((m) => `<tr><td>${esc(monthLabel(m.month))}</td><td class="r">${money(m.billed)}</td><td class="r">${money(m.collected)}</td><td class="r">${money(m.outstanding)}</td><td class="r">${pct(m.rate)}</td></tr>`).join("")}</table>
+      ${r.unitRows.length ? `<h2>Performance by unit</h2><table><tr><th>Unit</th><th>Tenant</th><th class="r">Billed</th><th class="r">Paid</th><th class="r">Balance</th><th class="r">Rate</th></tr>${r.unitRows.map((u) => `<tr><td>${esc(u.unit)}</td><td>${esc(u.tenant ?? "")}</td><td class="r">${money(u.billed)}</td><td class="r">${money(u.paid)}</td><td class="r">${money(u.balance)}</td><td class="r">${pct(u.rate)}</td></tr>`).join("")}</table>` : ""}`);
+  };
 
   return (
     <div className="space-y-4">
@@ -86,7 +127,8 @@ export default function Reports({ supabase, propertyId, units }) {
           <select className={inputCls} value={range} onChange={(e) => setRange(e.target.value)}>
             {Object.entries(RANGES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-          <button className={btnGhost} onClick={print}>Print report</button>
+          <button className={btnGhost} onClick={csvAll}>Download (Excel)</button>
+          <button className={btnGhost} onClick={print}>Print / save as PDF</button>
         </div>
       </PageHead>
 

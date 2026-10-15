@@ -26,13 +26,14 @@ export function printDoc(title, body) {
   if (!w) { alert("Please allow pop-ups for this site to print."); return; }
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>
     body{font-family:Arial,Helvetica,sans-serif;color:#111827;max-width:720px;margin:32px auto;padding:0 20px}
-    .brand{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #059669;padding-bottom:10px;margin-bottom:20px}
-    .brand b{font-size:26px;color:#059669;letter-spacing:1px}.brand span{font-size:12px;color:#6b7280}
+    .brand{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #1D4ED8;padding-bottom:10px;margin-bottom:20px}
+    .brand b{font-size:26px;color:#1D4ED8;letter-spacing:1px}.brand span{font-size:12px;color:#6b7280}
     h1{font-size:20px;margin:0 0 4px}.muted{color:#6b7280;font-size:12px}
     table{width:100%;border-collapse:collapse;margin:16px 0}
     td,th{padding:9px 10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:13px}
     td.r,th.r{text-align:right}.total td{font-weight:bold;border-top:2px solid #111827}
     .box{background:#f3f4f6;border-radius:8px;padding:12px 14px;margin-top:18px;font-size:13px}
+    h2{font-size:15px;margin:20px 0 6px;color:#1D4ED8}svg{width:100%;height:auto;display:block}.chart{margin:4px 0 14px;page-break-inside:avoid}tr{page-break-inside:avoid}
     @media print{body{margin:0}}
   </style></head><body>${body}</body></html>`);
   w.document.close(); w.focus();

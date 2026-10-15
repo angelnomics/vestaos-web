@@ -282,7 +282,7 @@ function Dashboard() {
       {tab === "import" && <Import supabase={supabase} propertyId={propertyId} units={units} canEdit={isOwner} onDone={refresh} />}
       {tab === "messages" && <Messages supabase={supabase} propertyId={propertyId} units={units} canEdit={isOwner} onSent={() => setTab("sms")} />}
       {tab === "deposits" && <Deposits supabase={supabase} units={units} canEdit={isOwner} onChanged={refresh} />}
-      {tab === "reports" && <Reports supabase={supabase} propertyId={propertyId} units={units} />}
+      {tab === "reports" && <Reports supabase={supabase} propertyId={propertyId} propertyName={properties.find((p) => p.id === propertyId)?.name ?? ""} units={units} />}
       {tab === "maintenance" && <Maintenance supabase={supabase} propertyId={propertyId} units={units} />}
       {tab === "security" && <Security supabase={supabase} propertyId={propertyId} />}
       {tab === "sms" && <Sms supabase={supabase} units={units} />}
