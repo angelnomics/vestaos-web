@@ -39,3 +39,29 @@ export function printDoc(title, body) {
   w.document.close(); w.focus();
   setTimeout(() => w.print(), 300);
 }
+
+export function downloadBlob(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+export function openBlob(blob) {
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, "_blank");
+  if (!w) alert("Please allow pop-ups for this site to open the report.");
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+// Opens the phone's share sheet (WhatsApp, email and so on) with the file attached.
+// Where that is not possible, the file is saved instead. Returns what happened.
+export async function sharePdf(blob, filename, title) {
+  const file = new File([blob], filename, { type: "application/pdf" });
+  if (navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file], title }); return "shared"; }
+    catch (err) { if (err?.name === "AbortError") return "cancelled"; }
+  }
+  downloadBlob(filename, blob);
+  return "downloaded";
+}

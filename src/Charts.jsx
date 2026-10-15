@@ -22,11 +22,12 @@ export function Legend({ items, light = false }) {
   );
 }
 
-export function BarChart({ labels, series, fmt = compact, height = 210, w = 640, light = false, tip = (v) => String(v) }) {
+export function BarChart({ labels, series, fmt = compact, height = 210, w = 640, light = false, intAxis = false, tip = (v) => String(v) }) {
   const t = theme(light);
   if (!labels.length) return <p className="py-8 text-center text-sm text-slate-500">Nothing to show yet.</p>;
   const W = w, L = 46, R = 6, T = 8, B = 26, H = height;
-  const max = niceMax(Math.max(1, ...series.flatMap((s) => s.values)));
+  const raw = Math.max(1, ...series.flatMap((s) => s.values));
+  const max = intAxis ? Math.max(4, Math.ceil(raw / 4) * 4) : niceMax(raw);
   const gw = (W - L - R) / labels.length;
   const bw = Math.max(3, Math.min(30, (gw - 6) / series.length));
   const y = (v) => T + (H - T - B) * (1 - v / max);
