@@ -15,6 +15,7 @@ import Reports from "./Reports.jsx";
 import Settings from "./Settings.jsx";
 import Properties from "./Properties.jsx";
 import Health from "./Health.jsx";
+import Overview from "./Overview.jsx";
 import Deposits from "./Deposits.jsx";
 import Messages from "./Messages.jsx";
 import Import from "./Import.jsx";
@@ -269,25 +270,10 @@ function Dashboard() {
       {tab === "grid" && (
         <>
           <Health supabase={supabase} tick={tick} onGo={setTab} />
-          <PageHead title="Dashboard" hint="Rent status for every unit this month." />
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-xl bg-slate-900 p-3"><div className="text-xl font-semibold text-emerald-300">{summary.paid}</div><div className="text-xs text-slate-400">Paid</div></div>
-            <div className="rounded-xl bg-slate-900 p-3"><div className="text-xl font-semibold text-red-300">{summary.overdue}</div><div className="text-xs text-slate-400">Overdue</div></div>
-            <div className="rounded-xl bg-slate-900 p-3"><div className="text-sm font-semibold text-white">{kes(summary.arrears)}</div><div className="text-xs text-slate-400">Outstanding</div></div>
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-            {units.map((u) => (
-              <button key={u.unit_id} onClick={() => setSelected(u)}
-                className={`rounded-xl border p-3 text-left ${STATES[u.state].cls}`}>
-                <div className="font-semibold">{u.unit_number}</div>
-                <div className="text-xs opacity-80">{STATES[u.state].label}</div>
-                {u.balance > 0 && <div className="text-xs mt-1">{kes(u.balance)}</div>}
-              </button>
-            ))}
-          </div>
+          <Overview supabase={supabase} properties={properties} tick={tick} onOpen={(id) => { setPropertyId(id); setTab("units"); }} onAddProperty={() => setTab("properties")} />
         </>
       )}
-      {tab === "properties" && <Properties supabase={supabase} properties={properties} ownedIds={ownedIds} onChanged={refresh} onOpen={(id) => { setPropertyId(id); setTab("grid"); }} />}
+      {tab === "properties" && <Properties supabase={supabase} properties={properties} ownedIds={ownedIds} onChanged={refresh} onOpen={(id) => { setPropertyId(id); setTab("units"); }} />}
       {tab === "units" && <Units supabase={supabase} propertyId={propertyId} units={units} canEdit={isOwner} onSelect={setSelected} onChanged={refresh} />}
       {tab === "tenants" && <Tenants supabase={supabase} units={units} canEdit={isOwner} onChanged={refresh} />}
       {tab === "invoices" && <Invoices supabase={supabase} units={units} canEdit={isOwner} />}
