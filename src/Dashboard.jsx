@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { X } from "lucide-react";
 import Manage from "./Manage.jsx";
@@ -32,13 +32,13 @@ const supabase = createClient(
 );
 
 // Shown under the login form when filled in.
-const SUPPORT = { email: "nicholink254@gmail.com", phone: "0795629436" };
+const SUPPORT = { email: "", phone: "" };
 
 const FEATURES = [
-  ["◆", "M-Pesa Reconciliation", "Automatically match incoming payments to the correct tenant and invoice."],
-  ["▤", "Automated Billing", "Generate monthly invoices and send payment reminders automatically."],
-  ["♙", "Tenant Management", "Keep tenant, unit and payment information organized in one place."],
-  ["🔧", "Maintenance", "Track property issues from reporting through resolution."],
+  ["â—†", "M-Pesa Reconciliation", "Automatically match incoming payments to the correct tenant and invoice."],
+  ["â–¤", "Automated Billing", "Generate monthly invoices and send payment reminders automatically."],
+  ["â™™", "Tenant Management", "Keep tenant, unit and payment information organized in one place."],
+  ["ðŸ”§", "Maintenance", "Track property issues from reporting through resolution."],
 ];
 
 function Login({ onTenant }) {
@@ -91,7 +91,7 @@ function Login({ onTenant }) {
             ))}
           </div>
         </div>
-        <div className="relative text-[11px] text-gray-500">© 2026 SOVA. Property management platform.</div>
+        <div className="relative text-[11px] text-gray-500">Â© 2026 SOVA. Property management platform.</div>
       </section>
 
       <section className="flex items-center justify-center bg-white p-6 md:p-9">
@@ -133,7 +133,7 @@ function Login({ onTenant }) {
             <div className="text-center text-[11px] leading-relaxed text-gray-500">
               Need help accessing your account?<br />
               {SUPPORT.email && <a className="font-semibold text-blue-600" href={`mailto:${SUPPORT.email}`}>{SUPPORT.email}</a>}
-              {SUPPORT.email && SUPPORT.phone && " · "}
+              {SUPPORT.email && SUPPORT.phone && " Â· "}
               {SUPPORT.phone && <a className="font-semibold text-blue-600" href={`tel:${SUPPORT.phone}`}>{SUPPORT.phone}</a>}
             </div>
           )}
@@ -159,7 +159,7 @@ function UnitDrawer({ unit, onClose }) {
         <div className="flex justify-between items-start">
           <div>
             <h2 className="text-lg font-semibold text-white">House {unit.unit_number}</h2>
-            <p className="text-sm text-slate-400">{unit.tenant_name ?? "Vacant"} · Ref {unit.account_ref}</p>
+            <p className="text-sm text-slate-400">{unit.tenant_name ?? "Vacant"} Â· Ref {unit.account_ref}</p>
           </div>
           <button onClick={onClose}><X className="text-slate-400" /></button>
         </div>
@@ -209,12 +209,12 @@ function Unmatched({ propertyId, units, canEdit = true }) {
             <span className="text-slate-400">{p.trans_id}</span>
           </div>
           <p className="text-xs text-slate-400">
-            Typed: “{p.bill_ref_raw || "-"}” · {p.payer_name || "Unknown payer"}
+            Typed: â€œ{p.bill_ref_raw || "-"}â€ Â· {p.payer_name || "Unknown payer"}
           </p>
           <div className="flex gap-2">
             <select className="flex-1 rounded-lg bg-slate-950 border border-slate-700 p-2 text-sm text-slate-100"
               value={pick[p.id] ?? ""} onChange={(e) => setPick({ ...pick, [p.id]: e.target.value })}>
-              <option value="">Assign to unit…</option>
+              <option value="">Assign to unitâ€¦</option>
               {units.map((u) => <option key={u.unit_id} value={u.unit_id}>{u.account_ref}</option>)}
             </select>
             <button onClick={() => assign(p.id)} className="rounded-lg bg-emerald-600 px-3 text-sm text-white">Assign</button>
